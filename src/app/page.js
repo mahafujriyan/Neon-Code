@@ -19,7 +19,7 @@ export default function Home() {
   // ফিচারের ডাটাবেস (লিঙ্কসহ)
   const features = [
     { title: "Admin Dashboard", path: "/dashboard/admin" },
-    { title: "Manager Control", path: "/dashboard/manager" },
+   
     { title: "Payment Tracking", path: "/dashboard/admin" },
     { title: "Role-Based Access", path: "/register" },
   ];
