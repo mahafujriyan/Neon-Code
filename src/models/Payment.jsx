@@ -5,14 +5,13 @@ const PaymentSchema = new mongoose.Schema(
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
+      required: true,
     },
 
     paidUSD: Number,
-    paidBDT: Number,
     paymentDate: Date,
-    paymentMethod: String,
 
-    proofImage: String, // screenshot url later
+    proofImage: String, // Google Drive URL
   },
   { timestamps: true }
 );

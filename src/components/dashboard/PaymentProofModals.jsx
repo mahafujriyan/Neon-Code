@@ -1,61 +1,63 @@
 "use client";
 import { useState } from "react";
 
-export default function PaymentProofModal({ order, onClose, refresh }) {
-  const [file, setFile] = useState(null);
+export default function AddPaymentModal({ order, onClose, refresh }) {
   const [paidUSD, setPaidUSD] = useState("");
-  const [preview, setPreview] = useState(null);
+  const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const submit = async () => {
-    const fd = new FormData();
-    fd.append("orderId", order._id);
-    fd.append("paidUSD", paidUSD);
-    if (file) fd.append("screenshot", file);
+  const submitPayment = async () => {
+    setLoading(true);
 
-    await fetch("/api/orders/payment", {
+    const formData = new FormData();
+    formData.append("orderId", order._id);
+    formData.append("paidUSD", paidUSD);
+    formData.append("dollarRate", order.dollarRate);
+    formData.append("paymentMethod", "cash");
+    if (image) formData.append("image", image);
+
+    await fetch("/api/payments", {
       method: "POST",
-      body: fd,
+      body: formData,
     });
 
     refresh();
     onClose();
+    setLoading(false);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-      <div className="bg-white p-6 rounded w-96">
-        <h2 className="font-bold mb-3">{order.clientName}</h2>
-
-        {preview && (
-          <img src={preview} className="h-40 w-full object-contain mb-3" />
-        )}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl w-96">
+        <h3 className="font-bold mb-4">
+          Add Payment – {order.clientName}
+        </h3>
 
         <input
           type="number"
           placeholder="Paid USD"
-          className="w-full p-2 border mb-3"
+          className="w-full p-3 border rounded mb-3"
           onChange={(e) => setPaidUSD(e.target.value)}
         />
 
         <input
           type="file"
           accept="image/*"
-          onChange={(e) => {
-            setFile(e.target.files[0]);
-            setPreview(URL.createObjectURL(e.target.files[0]));
-          }}
+          className="w-full mb-4"
+          onChange={(e) => setImage(e.target.files[0])}
         />
 
-        <div className="flex gap-3 mt-4">
+        <div className="flex gap-2">
           <button
-            onClick={submit}
-            className="bg-blue-600 text-white px-4 py-2 rounded flex-1"
+            onClick={submitPayment}
+            disabled={loading}
+            className="bg-blue-600 text-white px-4 py-2 rounded w-full"
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </button>
           <button
             onClick={onClose}
-            className="border px-4 py-2 rounded flex-1"
+            className="border px-4 py-2 rounded w-full"
           >
             Cancel
           </button>
