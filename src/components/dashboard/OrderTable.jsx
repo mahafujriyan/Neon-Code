@@ -1,49 +1,66 @@
-import { convert } from "@/app/Utilis/convert";
+"use client";
+import { useState } from "react";
 
-export default function OrdersTable({ orders, currency, rate }) {
+export default function OrdersTable({ orders, onAddPayment }) {
+  const [preview, setPreview] = useState(null);
+
   return (
-    <table className="w-full text-sm">
-      <thead className="border-b">
-        <tr className="text-left">
-          <th>Order ID</th>
-          <th>Client</th>
-          <th>Order Type</th>
-          <th>Manager</th>
-          <th>Total</th>
-          <th>Paid</th>
-          <th>Due</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {orders.map(o => (
-          <tr key={o.id} className="border-b">
-            <td>{o.id}</td>
-            <td>
-              <p className="font-medium">{o.client}</p>
-              <p className="text-xs text-gray-400">{o.company}</p>
-            </td>
-            <td>{o.type}</td>
-            <td>{o.manager}</td>
-            <td>{convert(o.total, currency, rate)}</td>
-            <td className="text-green-600">
-              {convert(o.paid, currency, rate)}
-            </td>
-            <td className="text-red-600">
-              {convert(o.due, currency, rate)}
-            </td>
-            <td>
-              <span className={`px-2 py-1 rounded text-xs ${
-                o.status === "completed"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-blue-100 text-blue-700"
-              }`}>
-                {o.status}
-              </span>
-            </td>
+    <>
+      <table className="w-full text-sm bg-white dark:bg-slate-900 rounded-2xl">
+        <thead className="bg-slate-50 dark:bg-slate-800 text-xs uppercase">
+          <tr>
+            <th className="p-3">Client</th>
+            <th className="p-3">Total</th>
+            <th className="p-3">Paid</th>
+            <th className="p-3">Proof</th>
+            <th className="p-3">Action</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {orders.map((o) => {
+            const paid =
+              o.payments?.reduce((s, p) => s + (p.paidUSD || 0), 0) || 0;
+
+            return (
+              <tr key={o._id} className="border-t">
+                <td className="p-3">{o.clientName}</td>
+                <td className="p-3">${o.totalAmountUSD}</td>
+                <td className="p-3 text-green-600">${paid}</td>
+                <td className="p-3 flex gap-2">
+                  {o.payments?.map(
+                    (p, i) =>
+                      p.screenshot && (
+                        <img
+                          key={i}
+                          src={p.screenshot}
+                          className="w-8 h-8 rounded cursor-pointer object-cover"
+                          onClick={() => setPreview(p.screenshot)}
+                        />
+                      )
+                  )}
+                </td>
+                <td className="p-3">
+                  <button
+                    onClick={() => onAddPayment(o)}
+                    className="text-blue-600 text-xs font-bold"
+                  >
+                    Add Payment
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {preview && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          onClick={() => setPreview(null)}
+        >
+          <img src={preview} className="max-h-[90%] max-w-[90%]" />
+        </div>
+      )}
+    </>
   );
 }
