@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { auth, googleProvider } from "@/lib/firebase"; // পাথ চেক করুন
+import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("user");
@@ -20,105 +20,73 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
-    // For demo: credentials login (replace with API call in real app)
-    const res = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
-
-    if (res?.error) {
-      setError("Invalid credentials");
+    try {
+      // Firebase Register
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Update Name
+      await updateProfile(userCredential.user, { displayName: name });
+      
+      router.push("/dashboard/admin");
+    } catch (err) {
+      setError(err.code === 'auth/email-already-in-use' ? "Email already exists" : err.message);
+    } finally {
       setLoading(false);
-    } else {
-      // Successful login → redirect to dashboard
-      router.push("/dashboard");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      router.push("/dashboard/admin");
+    } catch (err) {
+      setError("Google Login failed. Please try again.");
     }
   };
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2 bg-zinc-50 dark:bg-black">
-      {/* Left Animation */}
+    <div className="min-h-screen grid md:grid-cols-2 bg-zinc-50 dark:bg-black font-sans">
       <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-black to-zinc-800 text-white p-10">
-        <h1 className="text-4xl font-bold">Welcome</h1>
-        <p className="mt-4 max-w-sm text-center text-zinc-300">
-          Register to access the Neon Code management system.
+        <h1 className="text-4xl font-bold italic tracking-tighter uppercase">NeonCode</h1>
+        <p className="mt-4 max-w-sm text-center text-zinc-400 font-medium uppercase text-xs tracking-widest">
+          Register to access the management system.
         </p>
-        <div className="mt-10 h-40 w-40 animate-pulse rounded-full bg-zinc-700/40" />
+        <div className="mt-10 h-40 w-40 animate-pulse rounded-full bg-indigo-500/20 border border-indigo-500/30 shadow-[0_0_50px_rgba(99,102,241,0.2)]" />
       </div>
 
-      {/* Register Form */}
       <div className="flex items-center justify-center px-6">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg dark:bg-zinc-950">
-          <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-            Create Account
-          </h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Fill in your details to register or use Google login.
-          </p>
+        <div className="w-full max-w-md rounded-[2.5rem] bg-white p-10 shadow-2xl dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900">
+          <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase italic">Create Account</h2>
+          <p className="mt-1 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Join NeonCode Management</p>
 
-          {error && <p className="text-red-500 mt-2">{error}</p>}
+          {error && <p className="text-red-500 text-xs font-bold mt-4 p-3 bg-red-50 rounded-xl border border-red-100 uppercase tracking-tighter">{error}</p>}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border px-4 py-2 outline-none dark:bg-zinc-900"
-              required
-            />
-
-            <input
-              type="email"
-              placeholder="Email Address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border px-4 py-2 outline-none dark:bg-zinc-900"
-              required
-            />
-
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full rounded-lg border px-4 py-2 outline-none dark:bg-zinc-900"
-            >
-              <option value="user">User</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <input type="text" placeholder="FULL NAME" value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-2xl border border-gray-100 px-5 py-4 text-xs font-bold outline-none dark:bg-zinc-900 dark:border-zinc-800 focus:ring-2 ring-indigo-500/20 transition-all" required />
+            <input type="email" placeholder="EMAIL ADDRESS" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-2xl border border-gray-100 px-5 py-4 text-xs font-bold outline-none dark:bg-zinc-900 dark:border-zinc-800 focus:ring-2 ring-indigo-500/20 transition-all" required />
+            <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full rounded-2xl border border-gray-100 px-5 py-4 text-xs font-bold outline-none dark:bg-zinc-900 dark:border-zinc-800 appearance-none">
+              <option value="user">USER</option>
+              <option value="manager">MANAGER</option>
+              <option value="admin">ADMIN</option>
             </select>
+            <input type="password" placeholder="PASSWORD" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-2xl border border-gray-100 px-5 py-4 text-xs font-bold outline-none dark:bg-zinc-900 dark:border-zinc-800 focus:ring-2 ring-indigo-500/20 transition-all" required />
 
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border px-4 py-2 outline-none dark:bg-zinc-900"
-              required
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-black py-2 text-white hover:bg-zinc-800 dark:bg-white dark:text-black"
-            >
-              {loading ? "Registering..." : "Register"}
+            <button type="submit" disabled={loading} className="w-full rounded-2xl bg-indigo-600 py-4 text-white font-black uppercase text-xs shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50">
+              {loading ? "Registering..." : "Create Account"}
             </button>
           </form>
 
-          {/* Google Sign In */}
-          <button
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-            className="mt-4 w-full rounded-lg border py-2 font-medium hover:bg-zinc-100 dark:hover:bg-zinc-900"
-          >
+          <div className="relative my-8 text-center">
+            <span className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100 dark:border-zinc-900"></span></span>
+            <span className="relative bg-white dark:bg-zinc-950 px-4 text-[10px] font-bold text-gray-400 uppercase">OR</span>
+          </div>
+
+          <button onClick={handleGoogleSignIn} className="w-full flex items-center justify-center gap-3 rounded-2xl border border-gray-100 py-4 font-black uppercase text-[10px] hover:bg-gray-50 dark:border-zinc-900 dark:hover:bg-zinc-900 transition-all">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4" alt="Google" />
             Continue with Google
           </button>
 
-          <p className="mt-4 text-center text-sm text-zinc-500">
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-black dark:text-white">
-              Login
-            </Link>
+          <p className="mt-8 text-center text-[10px] font-bold text-zinc-400 uppercase">
+            Already have an account? <Link href="/login" className="text-indigo-600 dark:text-indigo-400">Login</Link>
           </p>
         </div>
       </div>
