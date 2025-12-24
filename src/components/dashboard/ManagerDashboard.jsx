@@ -1,8 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase"; 
-import { onAuthStateChanged, signOut } from "firebase/auth";
 import AddOrderModal from "../AddFroms/AddOrderForms";
 import OrderTable from "./OrderTable";
 
@@ -12,182 +9,146 @@ export default function ManagerDashboard({ user, role, onLogout }) {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // ডাটা লোড করার ইফেক্ট
   useEffect(() => {
-    if (user && role) {
-      loadData();
-    }
+    if (user && role) loadData();
   }, [user, role]);
 
   const loadData = async () => {
     try {
-      // এপিআই কল করার সময় ম্যানেজারের ইমেইল এবং রোল পাঠানো হচ্ছে
-      // এর ফলে ব্যাকএন্ড থেকে শুধুমাত্র এই ম্যানেজারের ডাটাই আসবে
-      const res = await fetch(`/api/orders?email=${user.email}&role=${role}`);
+      // ইমেইল প্যারামিটারটি ছোট হাতের করা নিরাপদ (Best Practice)
+      const res = await fetch(`/api/orders?email=${user.email.toLowerCase()}`);
       const data = await res.json();
       setOrders(Array.isArray(data) ? data : []);
-    } catch (err) { 
-      console.error("Manager Data Fetch Error:", err); 
-    } finally { 
-      setLoading(false); 
-    }
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
-  // --- স্ট্যাটস ক্যালকুলেশন লজিক ---
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const calcStats = (data) => {
+    const usd = data.reduce((s, o) => s + (Number(o.totalAmountUSD) || 0), 0);
+    const rev = data.reduce((s, o) => s + (Number(o.totalAmountUSD) * Number(o.dollarRate || 135)), 0);
+    const profit = data.reduce((s, o) => s + ((Number(o.dollarRate || 135) - Number(o.buyRate || 130)) * Number(o.totalAmountUSD || 0)), 0);
+    const paid = data.reduce((total, order) => total + (order.payments?.reduce((sum, p) => sum + (Number(p.paidUSD) || 0), 0) || 0), 0);
+    return { usd, rev, profit, paid, due: rev - paid, count: data.length };
+  };
 
-  // মাসের প্রথম দিন থেকে করা অর্ডারগুলো ফিল্টার
-  const monthlyOrders = orders.filter(o => new Date(o.orderDate || o.createdAt) >= firstDayOfMonth);
-  
-  const mTotalUSD = monthlyOrders.reduce((s, o) => s + (Number(o.totalAmountUSD) || 0), 0);
-  const mTotalRevenueBDT = monthlyOrders.reduce((s, o) => s + (Number(o.totalAmountUSD) * Number(o.dollarRate || 135)), 0);
-  const mTotalProfitBDT = monthlyOrders.reduce((s, o) => s + ((Number(o.dollarRate || 135) - Number(o.buyRate || 130)) * Number(o.totalAmountUSD || 0)), 0);
-  const mTotalPaidBDT = monthlyOrders.reduce((total, order) => total + (order.payments?.reduce((sum, p) => sum + (Number(p.paidUSD) || 0), 0) || 0), 0);
-  const mDueBDT = mTotalRevenueBDT - mTotalPaidBDT;
-
-  // আজকের তারিখ অনুযায়ী ফিল্টার
-  const filteredOrders = orders.filter(o => {
-    const d = new Date(o.orderDate || o.createdAt).toISOString().split('T')[0];
-    return d === selectedDate;
-  });
-
-  const tTotalUSD = filteredOrders.reduce((s, o) => s + (Number(o.totalAmountUSD) || 0), 0);
-  const tTotalRevenueBDT = filteredOrders.reduce((s, o) => s + (Number(o.totalAmountUSD) * Number(o.dollarRate || 135)), 0);
-  const tTotalProfitBDT = filteredOrders.reduce((s, o) => s + ((Number(o.dollarRate || 135) - Number(o.buyRate || 130)) * Number(o.totalAmountUSD || 0)), 0);
-  const tTotalPaidBDT = filteredOrders.reduce((total, order) => total + (order.payments?.reduce((sum, p) => sum + (Number(p.paidUSD) || 0), 0) || 0), 0);
-  const tDueBDT = tTotalRevenueBDT - tTotalPaidBDT;
+  const filteredOrders = orders.filter(o => new Date(o.orderDate || o.createdAt).toISOString().split('T')[0] === selectedDate);
+  const mStats = calcStats(orders.filter(o => new Date(o.orderDate || o.createdAt) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+  const tStats = calcStats(filteredOrders);
 
   if (loading) return (
-    <div className="h-screen flex items-center justify-center bg-white dark:bg-[#020617]">
-      <div className="text-indigo-600 font-black italic uppercase animate-pulse text-[14px] tracking-widest">
-        NeonCode Manager Syncing...
+    <div className="h-screen flex items-center justify-center bg-[#f8fafc] dark:bg-[#020617]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-widest text-[10px]">NeonCode Syncing...</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen p-4 md:p-8 bg-[#f8fafc] dark:bg-[#020617] text-gray-900 dark:text-white font-sans transition-all">
+    <div className="min-h-screen p-4 md:p-8 bg-[#f8fafc] dark:bg-[#020617] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
       
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-gray-100 dark:border-gray-800 pb-6">
-        <div>
-          <h1 className="text-3xl font-black uppercase italic tracking-tighter text-indigo-600 dark:text-indigo-400">
-            NeonCode Manager
-          </h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                Manager Session: {user.displayName || user.email}
-            </p>
+      {/* PREMIUM TOP BAR */}
+      <div className="sticky top-0 z-50 mb-8 backdrop-blur-xl bg-white/80 dark:bg-[#020617]/90 border border-slate-200 dark:border-slate-800/60 rounded-3xl p-4 md:p-5 shadow-xl shadow-slate-200/40 dark:shadow-none">
+        <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-4 w-full lg:w-auto">
+            <div className="w-11 h-11 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <span className="text-white font-black text-xl italic">N</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-tighter text-indigo-600 dark:text-indigo-400">Manager Dashboard</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                {user.email}
+              </p>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <input 
-            type="date" 
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-2xl text-xs font-bold outline-none cursor-pointer shadow-sm"
-          />
-
-          <button onClick={() => setShowModal(true)} className="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg hover:bg-indigo-700 transition-all active:scale-95">
-            + Create Order
-          </button>
-
-          <div className="flex items-center bg-white dark:bg-gray-800 p-1 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-             <span className="px-4 text-[9px] font-black uppercase text-amber-500">
-               {role}
-             </span>
-             <button onClick={onLogout} className="bg-red-500 text-white px-4 py-3 rounded-xl font-black uppercase text-[9px] hover:bg-red-600 transition-all active:scale-95 shadow-md">
-                Exit
-             </button>
+          
+          <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3 w-full lg:w-auto">
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-slate-100 dark:bg-slate-900 border-none px-4 py-2.5 rounded-xl text-[11px] font-bold outline-none focus:ring-2 ring-indigo-500/30 transition-all cursor-pointer shadow-inner dark:text-slate-300"
+            />
+            <button onClick={() => setShowModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold uppercase text-[10px] shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">
+              + Add Order
+            </button>
+            <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shadow-inner border border-slate-200 dark:border-slate-800">
+               <span className="px-3 text-[9px] font-black uppercase text-indigo-500">{role}</span>
+               <button onClick={onLogout} className="bg-rose-500/10 hover:bg-rose-500 text-rose-600 hover:text-white px-4 py-2 rounded-lg font-black uppercase text-[9px] transition-all">Exit</button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* STATS CARDS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-        {/* Monthly Card (Manager's Personal) */}
-        <div className="bg-gradient-to-br from-indigo-700 to-purple-800 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black opacity-60 uppercase tracking-[0.2em]">Your Monthly Stats</h3>
-                <span className="text-[10px] font-black bg-white/20 px-3 py-1 rounded-full uppercase">Orders: {monthlyOrders.length}</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative z-10">
-                <div className="bg-white/10 p-4 rounded-2xl border border-white/5 shadow-inner">
-                    <p className="text-[9px] opacity-70 uppercase font-bold text-yellow-300">Total USD</p>
-                    <p className="text-xl font-black">${mTotalUSD.toLocaleString()}</p>
-                </div>
-                <div className="bg-white/10 p-4 rounded-2xl border border-white/5 shadow-inner">
-                    <p className="text-[9px] opacity-70 uppercase font-bold">Revenue ৳</p>
-                    <p className="text-xl font-black">৳{mTotalRevenueBDT.toLocaleString()}</p>
-                </div>
-                <div className="bg-emerald-500/30 p-4 rounded-2xl border border-emerald-400/40 ring-1 ring-emerald-400/50 shadow-lg">
-                    <p className="text-[9px] uppercase font-bold text-emerald-300">Profit ৳</p>
-                    <p className="text-xl font-black text-emerald-300">৳{mTotalProfitBDT.toLocaleString()}</p>
-                </div>
-                <div className="bg-white/10 p-4 rounded-2xl border border-white/5 shadow-inner">
-                    <p className="text-[9px] opacity-70 uppercase font-bold text-blue-200">Paid ৳</p>
-                    <p className="text-xl font-black">৳{mTotalPaidBDT.toLocaleString()}</p>
-                </div>
-                <div className="bg-red-500/20 p-4 rounded-2xl border border-red-500/20 col-span-1 md:col-span-2 shadow-inner">
-                    <p className="text-[9px] opacity-70 uppercase font-bold text-red-300">Due ৳</p>
-                    <p className="text-xl font-black text-red-300">৳{mDueBDT.toLocaleString()}</p>
-                </div>
+      {/* STATS GRID */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-10">
+        <div className="bg-[#1e293b] dark:bg-[#0f172a] rounded-[2.5rem] p-8 text-white shadow-2xl border border-slate-200 dark:border-slate-800/50 relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Monthly Overview</h3>
+                  <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[15px] font-bold text-indigo-300">Orders: {mStats.count}</div>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  <StatBox label="Total USD" val={`$${mStats.usd.toLocaleString()}`} color="text-amber-400" />
+                  <StatBox label="Revenue ৳" val={`৳${mStats.rev.toLocaleString()}`} />
+                  <StatBox label="Profit ৳" val={`৳${mStats.profit.toLocaleString()}`} color="text-emerald-400" isHighlight />
+                  <StatBox label="Paid ৳" val={`৳${mStats.paid.toLocaleString()}`} color="text-sky-400" />
+                  <StatBox label="Due ৳" val={`৳${mStats.due.toLocaleString()}`} color="text-rose-400" isWide />
+              </div>
             </div>
         </div>
 
-        {/* Today Card (Manager's Personal) */}
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black opacity-60 uppercase tracking-[0.2em]">Your Day: {selectedDate}</h3>
-                <span className="text-[10px] font-black bg-black/20 px-3 py-1 rounded-full uppercase">Orders: {filteredOrders.length}</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative z-10">
-                <div className="bg-black/10 p-4 rounded-2xl border border-white/5 shadow-inner">
-                    <p className="text-[9px] opacity-70 uppercase font-bold text-yellow-200">Order USD</p>
-                    <p className="text-xl font-black text-yellow-200">${tTotalUSD.toLocaleString()}</p>
-                </div>
-                <div className="bg-black/10 p-4 rounded-2xl border border-white/5 shadow-inner">
-                    <p className="text-[9px] opacity-70 uppercase font-bold">Revenue ৳</p>
-                    <p className="text-xl font-black">৳{tTotalRevenueBDT.toLocaleString()}</p>
-                </div>
-                <div className="bg-white/20 p-4 rounded-2xl border border-white/30 ring-1 ring-white/40 shadow-lg">
-                    <p className="text-[9px] uppercase font-bold text-emerald-100">Profit ৳</p>
-                    <p className="text-xl font-black text-white">৳{tTotalProfitBDT.toLocaleString()}</p>
-                </div>
-                <div className="bg-black/10 p-4 rounded-2xl border border-white/5 shadow-inner">
-                    <p className="text-[9px] opacity-70 uppercase font-bold text-green-300">Paid ৳</p>
-                    <p className="text-xl font-black">৳{tTotalPaidBDT.toLocaleString()}</p>
-                </div>
-                <div className="bg-black/10 p-4 rounded-2xl border border-white/5 col-span-1 md:col-span-2 shadow-inner">
-                    <p className="text-[9px] opacity-70 uppercase font-bold text-orange-200">Due ৳</p>
-                    <p className="text-xl font-black text-orange-200">৳{tDueBDT.toLocaleString()}</p>
-                </div>
+        <div className="bg-[#0f172a] dark:bg-[#111827] rounded-[2.5rem] p-8 text-white shadow-2xl border border-slate-200 dark:border-slate-800/50 relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Daily Stats</h3>
+                  <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[15px] font-bold text-emerald-400">
+                    Today Orders: {tStats.count}
+                  </div>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  <StatBox label="Order USD" val={`$${tStats.usd.toLocaleString()}`} color="text-yellow-300" />
+                  <StatBox label="Revenue ৳" val={`৳${tStats.rev.toLocaleString()}`} />
+                  <StatBox label="Profit ৳" val={`৳${tStats.profit.toLocaleString()}`} color="text-emerald-300" isHighlight />
+                  <StatBox label="Paid ৳" val={`৳${tStats.paid.toLocaleString()}`} color="text-green-400" />
+                  <StatBox label="Due ৳" val={`৳${tStats.due.toLocaleString()}`} color="text-orange-400" isWide />
+              </div>
             </div>
         </div>
       </div>
 
       {/* TABLE SECTION */}
-      <div className="bg-white dark:bg-[#020617] rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-        <div className="p-6 border-b border-gray-50 dark:border-gray-900 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-          <h2 className="font-black text-gray-800 dark:text-white uppercase tracking-tighter italic text-sm">Your Order Entries</h2>
-          <div className="text-[10px] font-black text-indigo-500 uppercase px-4 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-full">
-            {filteredOrders.length} Entries
+      <div className="bg-white dark:bg-[#0f172a] rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800/60 overflow-hidden">
+        <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
+          <h2 className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter italic text-base">Transaction Records</h2>
+          <div className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase px-4 py-1.5 bg-indigo-500/10 rounded-full border border-indigo-500/20">
+            {filteredOrders.length} Entries found
           </div>
         </div>
-        <div className="p-2 overflow-x-auto">
-          <OrderTable 
-            orders={orders}          
-            refresh={loadData} 
-            role={role} 
-            selectedDate={selectedDate} 
-          />
+        <div className="p-4 overflow-x-auto">
+          <OrderTable orders={orders} refresh={loadData} role={role} selectedDate={selectedDate} />
         </div>
       </div>
 
-      {showModal && <AddOrderModal onClose={() => setShowModal(false)} refresh={loadData} />}
+      {/* FIXED: userEmail={user.email} অ্যাড করা হলো */}
+      {showModal && (
+        <AddOrderModal 
+          onClose={() => setShowModal(false)} 
+          refresh={loadData} 
+          userEmail={user.email} 
+        />
+      )}
+    </div>
+  );
+}
+
+function StatBox({ label, val, color = "text-white", isHighlight = false, isWide = false }) {
+  return (
+    <div className={`${isWide ? 'col-span-2' : ''} ${isHighlight ? 'bg-indigo-500/10 ring-1 ring-indigo-500/30' : 'bg-white/5'} p-4 rounded-2xl border border-white/5 shadow-inner`}>
+      <p className="text-[9px] opacity-50 uppercase font-black tracking-widest mb-1 truncate">{label}</p>
+      <p className={`text-lg md:text-xl font-black ${color} tracking-tighter break-word leading-none`}>
+        {val}
+      </p>
     </div>
   );
 }

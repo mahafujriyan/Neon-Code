@@ -7,6 +7,9 @@ const OrderSchema = new mongoose.Schema({
   orderType: String,
   orderDate: { type: Date, default: Date.now },
   managerName: String,
+  managerEmail: { type: String, required: true }, 
+  note: { type: String, default: "" },             
+  taskCount: { type: Number, default: 0 }, // টাস্কের হিসাব আলাদা থাকবে
   totalAmountUSD: { type: Number, default: 0 },
   dollarRate: { type: Number, default: 135 },
   buyRate: { type: Number, default: 130 },
@@ -18,4 +21,4 @@ const OrderSchema = new mongoose.Schema({
   }]
 }, { timestamps: true });
 
-export const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema); 
+export const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
