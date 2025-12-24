@@ -5,59 +5,39 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import AddOrderModal from "../AddFroms/AddOrderForms";
 import OrderTable from "./OrderTable";
-import Link from "next/link";
 
-export default function AdminDashboard() {
-  const router = useRouter();
+export default function ManagerDashboard({ user, role, onLogout }) {
   const [orders, setOrders] = useState([]);
-  const [userRole, setUserRole] = useState(null); 
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [authLoading, setAuthLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // ১. লগইন চেক এবং রোল ডাটাবেস থেকে আনা
+  // ডাটা লোড করার ইফেক্ট
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.push("/login");
-      } else {
-        try {
-          const res = await fetch(`/api/users?email=${user.email}`);
-          const userData = await res.json();
-          setUserRole(userData?.role || "manager"); 
-        } catch (err) {
-          console.error("Role fetch error:", err);
-          setUserRole("manager");
-        }
-        setAuthLoading(false);
-        loadData();
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (user && role) {
+      loadData();
+    }
+  }, [user, role]);
 
   const loadData = async () => {
     try {
-      const res = await fetch("/api/orders");
+      // এপিআই কল করার সময় ম্যানেজারের ইমেইল এবং রোল পাঠানো হচ্ছে
+      // এর ফলে ব্যাকএন্ড থেকে শুধুমাত্র এই ম্যানেজারের ডাটাই আসবে
+      const res = await fetch(`/api/orders?email=${user.email}&role=${role}`);
       const data = await res.json();
       setOrders(Array.isArray(data) ? data : []);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push("/");
-    } catch (error) {
-      console.error("Logout Error:", error);
+    } catch (err) { 
+      console.error("Manager Data Fetch Error:", err); 
+    } finally { 
+      setLoading(false); 
     }
   };
 
-  // --- ২. MONTHLY RESET LOGIC ---
+  // --- স্ট্যাটস ক্যালকুলেশন লজিক ---
   const now = new Date();
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  // মাসের প্রথম দিন থেকে করা অর্ডারগুলো ফিল্টার
   const monthlyOrders = orders.filter(o => new Date(o.orderDate || o.createdAt) >= firstDayOfMonth);
   
   const mTotalUSD = monthlyOrders.reduce((s, o) => s + (Number(o.totalAmountUSD) || 0), 0);
@@ -66,7 +46,7 @@ export default function AdminDashboard() {
   const mTotalPaidBDT = monthlyOrders.reduce((total, order) => total + (order.payments?.reduce((sum, p) => sum + (Number(p.paidUSD) || 0), 0) || 0), 0);
   const mDueBDT = mTotalRevenueBDT - mTotalPaidBDT;
 
-  // ৩. Daily Filtering
+  // আজকের তারিখ অনুযায়ী ফিল্টার
   const filteredOrders = orders.filter(o => {
     const d = new Date(o.orderDate || o.createdAt).toISOString().split('T')[0];
     return d === selectedDate;
@@ -78,7 +58,13 @@ export default function AdminDashboard() {
   const tTotalPaidBDT = filteredOrders.reduce((total, order) => total + (order.payments?.reduce((sum, p) => sum + (Number(p.paidUSD) || 0), 0) || 0), 0);
   const tDueBDT = tTotalRevenueBDT - tTotalPaidBDT;
 
-  if (authLoading || loading) return <div className="h-screen flex items-center justify-center bg-white dark:bg-[#020617] text-indigo-600 font-black italic tracking-widest uppercase animate-pulse">NeonCode Security Checking...</div>;
+  if (loading) return (
+    <div className="h-screen flex items-center justify-center bg-white dark:bg-[#020617]">
+      <div className="text-indigo-600 font-black italic uppercase animate-pulse text-[14px] tracking-widest">
+        NeonCode Manager Syncing...
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen p-4 md:p-8 bg-[#f8fafc] dark:bg-[#020617] text-gray-900 dark:text-white font-sans transition-all">
@@ -87,12 +73,12 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-gray-100 dark:border-gray-800 pb-6">
         <div>
           <h1 className="text-3xl font-black uppercase italic tracking-tighter text-indigo-600 dark:text-indigo-400">
-            NeonCode {userRole === 'admin' ? 'Admin' : 'Manager'}
+            NeonCode Manager
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                Session Active | Clients: {new Set(orders.map(o => o.clientName)).size} Total
+                Manager Session: {user.displayName || user.email}
             </p>
           </div>
         </div>
@@ -109,15 +95,11 @@ export default function AdminDashboard() {
             + Create Order
           </button>
 
-          {/* লগআউট বাটন সাথে রোল ইন্ডিকেটর */}
           <div className="flex items-center bg-white dark:bg-gray-800 p-1 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-             <span className={`px-4 text-[9px] font-black uppercase ${userRole === 'admin' ? 'text-indigo-500' : 'text-amber-500'}`}>
-               {userRole}
+             <span className="px-4 text-[9px] font-black uppercase text-amber-500">
+               {role}
              </span>
-             <button 
-                onClick={handleLogout} 
-                className="bg-red-500 text-white px-4 py-3 rounded-xl font-black uppercase text-[9px] hover:bg-red-600 transition-all shadow-md active:scale-95"
-              >
+             <button onClick={onLogout} className="bg-red-500 text-white px-4 py-3 rounded-xl font-black uppercase text-[9px] hover:bg-red-600 transition-all active:scale-95 shadow-md">
                 Exit
              </button>
           </div>
@@ -126,11 +108,11 @@ export default function AdminDashboard() {
 
       {/* STATS CARDS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-        {/* Monthly Card */}
+        {/* Monthly Card (Manager's Personal) */}
         <div className="bg-gradient-to-br from-indigo-700 to-purple-800 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black opacity-60 uppercase tracking-[0.2em]">Monthly Overview</h3>
-                <span className="text-[10px] font-black bg-white/20 px-3 py-1 rounded-full uppercase tracking-tighter">Orders: {monthlyOrders.length}</span>
+                <h3 className="text-xs font-black opacity-60 uppercase tracking-[0.2em]">Your Monthly Stats</h3>
+                <span className="text-[10px] font-black bg-white/20 px-3 py-1 rounded-full uppercase">Orders: {monthlyOrders.length}</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative z-10">
                 <div className="bg-white/10 p-4 rounded-2xl border border-white/5 shadow-inner">
@@ -142,7 +124,7 @@ export default function AdminDashboard() {
                     <p className="text-xl font-black">৳{mTotalRevenueBDT.toLocaleString()}</p>
                 </div>
                 <div className="bg-emerald-500/30 p-4 rounded-2xl border border-emerald-400/40 ring-1 ring-emerald-400/50 shadow-lg">
-                    <p className="text-[9px] uppercase font-bold text-emerald-300">Net Profit ৳</p>
+                    <p className="text-[9px] uppercase font-bold text-emerald-300">Profit ৳</p>
                     <p className="text-xl font-black text-emerald-300">৳{mTotalProfitBDT.toLocaleString()}</p>
                 </div>
                 <div className="bg-white/10 p-4 rounded-2xl border border-white/5 shadow-inner">
@@ -156,11 +138,11 @@ export default function AdminDashboard() {
             </div>
         </div>
 
-        {/* Today Card */}
+        {/* Today Card (Manager's Personal) */}
         <div className="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-black opacity-60 uppercase tracking-[0.2em]">Stats for {selectedDate}</h3>
-                <span className="text-[10px] font-black bg-black/20 px-3 py-1 rounded-full uppercase tracking-tighter">Orders: {filteredOrders.length}</span>
+                <h3 className="text-xs font-black opacity-60 uppercase tracking-[0.2em]">Your Day: {selectedDate}</h3>
+                <span className="text-[10px] font-black bg-black/20 px-3 py-1 rounded-full uppercase">Orders: {filteredOrders.length}</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative z-10">
                 <div className="bg-black/10 p-4 rounded-2xl border border-white/5 shadow-inner">
@@ -172,12 +154,12 @@ export default function AdminDashboard() {
                     <p className="text-xl font-black">৳{tTotalRevenueBDT.toLocaleString()}</p>
                 </div>
                 <div className="bg-white/20 p-4 rounded-2xl border border-white/30 ring-1 ring-white/40 shadow-lg">
-                    <p className="text-[9px] uppercase font-bold text-emerald-100">Today Profit ৳</p>
+                    <p className="text-[9px] uppercase font-bold text-emerald-100">Profit ৳</p>
                     <p className="text-xl font-black text-white">৳{tTotalProfitBDT.toLocaleString()}</p>
                 </div>
                 <div className="bg-black/10 p-4 rounded-2xl border border-white/5 shadow-inner">
                     <p className="text-[9px] opacity-70 uppercase font-bold text-green-300">Paid ৳</p>
-                    <p className="text-xl font-black text-green-300">৳{tTotalPaidBDT.toLocaleString()}</p>
+                    <p className="text-xl font-black">৳{tTotalPaidBDT.toLocaleString()}</p>
                 </div>
                 <div className="bg-black/10 p-4 rounded-2xl border border-white/5 col-span-1 md:col-span-2 shadow-inner">
                     <p className="text-[9px] opacity-70 uppercase font-bold text-orange-200">Due ৳</p>
@@ -190,16 +172,16 @@ export default function AdminDashboard() {
       {/* TABLE SECTION */}
       <div className="bg-white dark:bg-[#020617] rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
         <div className="p-6 border-b border-gray-50 dark:border-gray-900 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-          <h2 className="font-black text-gray-800 dark:text-white uppercase tracking-tighter italic text-sm">Order Records</h2>
+          <h2 className="font-black text-gray-800 dark:text-white uppercase tracking-tighter italic text-sm">Your Order Entries</h2>
           <div className="text-[10px] font-black text-indigo-500 uppercase px-4 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-full">
-            {filteredOrders.length} Records Shown
+            {filteredOrders.length} Entries
           </div>
         </div>
         <div className="p-2 overflow-x-auto">
           <OrderTable 
             orders={orders}          
             refresh={loadData} 
-            role={userRole} 
+            role={role} 
             selectedDate={selectedDate} 
           />
         </div>

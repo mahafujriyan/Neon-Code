@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -43,17 +42,17 @@ export default function LoginPage() {
         <p className="mt-4 max-w-sm text-center text-zinc-400 font-medium uppercase text-xs tracking-widest">Login to manage your business</p>
       </div>
 
-      <div className="flex items-center justify-center px-6">
-        <div className="w-full max-w-md rounded-[2.5rem] bg-white p-10 shadow-2xl dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900">
+      <div className="flex items-center justify-center px-4 py-8 md:px-6">
+        <div className="w-full max-w-md rounded-[2rem] md:rounded-[2.5rem] bg-white p-6 md:p-10 shadow-2xl dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900">
           <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase italic">Welcome Back</h2>
           <p className="mt-1 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">NeonCode Access Portal</p>
 
-          {error && <p className="text-red-500 text-xs font-bold mt-4 p-3 bg-red-50 rounded-xl border border-red-100 tracking-tighter">{error}</p>}
+          {error && <p className="text-red-500 text-[10px] font-bold mt-4 p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20 tracking-tighter uppercase">{error}</p>}
 
           <form onSubmit={handleLogin} className="mt-8 space-y-4">
             <input type="email" placeholder="EMAIL ADDRESS" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-2xl border border-gray-100 px-5 py-4 text-xs font-bold outline-none dark:bg-zinc-900 dark:border-zinc-800 focus:ring-2 ring-indigo-500/20" required />
             <input type="password" placeholder="PASSWORD" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-2xl border border-gray-100 px-5 py-4 text-xs font-bold outline-none dark:bg-zinc-900 dark:border-zinc-800 focus:ring-2 ring-indigo-500/20" required />
-            <button type="submit" disabled={loading} className="w-full rounded-2xl bg-black py-4 text-white font-black uppercase text-xs shadow-xl hover:scale-[1.02] transition-all dark:bg-white dark:text-black">
+            <button type="submit" disabled={loading} className="w-full rounded-2xl bg-black py-4 text-white font-black uppercase text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all dark:bg-white dark:text-black disabled:opacity-50">
               {loading ? "AUTHENTICATING..." : "LOG IN"}
             </button>
           </form>
