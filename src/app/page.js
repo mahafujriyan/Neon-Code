@@ -29,10 +29,11 @@ export default function Home() {
       <main className="w-full max-w-5xl">
         {/* Header */}
         <header className="flex items-center justify-between py-6">
-          <h1 className="text-xl font-black uppercase italic tracking-tighter text-indigo-600 dark:text-indigo-400">
-            NeonCode 
-          </h1>
-
+          <Link href="/">
+            <span className="text-white font-black text-4xl rounded-2xl italic">
+              <Image src="/company logo .jpg" alt="Logo" width={40} height={50} />
+            </span>
+          </Link>
           <Link
             href={user ? "/dashboard/admin" : "/login"}
             className="rounded-full bg-black px-5 py-2 text-sm font-bold uppercase text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 transition-all"
