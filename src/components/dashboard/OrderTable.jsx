@@ -41,43 +41,41 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
 
   filteredData = filteredData.sort((a, b) => new Date(b.orderDate || b.createdAt) - new Date(a.orderDate || a.createdAt));
 
-  // --- DELETE FUNCTION (FULLY WORKABLE) ---
-  const handleDelete = async (id) => {
-    if (role !== "admin") {
-      alert("⚠️ অ্যাক্সেস ডিনাইড! আপনি এডমিন নন।");
+  const handleDelete = async (orderId) => {
+    const currentUserRole = user?.role || role; 
+    if (currentUserRole?.toLowerCase() !== "admin") {
+      alert(`⚠️ পারমিশন নেই! আপনার বর্তমান রোল: ${currentUserRole}`);
       return;
     }
 
-    // নিশ্চিত হওয়া যে ইউজার ইমেইল আছে
-    const adminEmail = user?.email?.toLowerCase();
+    const adminEmail = user?.email;
     if (!adminEmail) {
-      alert("⚠️ সেশন পাওয়া যাচ্ছে না। দয়া করে পেজ রিফ্রেশ করুন।");
+      alert("⚠️ সেশন পাওয়া যাচ্ছে না। পেজটি রিফ্রেশ দিয়ে আবার চেষ্টা করুন।");
       return;
     }
 
-    if (window.confirm("আপনি কি নিশ্চিতভাবে ডিলিট করতে চান?")) {
+    if (window.confirm("আপনি কি নিশ্চিতভাবে এই অর্ডারটি ডিলিট করতে চান?")) {
       try {
-        // ID এবং Email দুটোই কুয়েরি প্যারামিটার হিসেবে পাঠানো হচ্ছে
-        const res = await fetch(`/api/orders?id=${id}&email=${encodeURIComponent(adminEmail)}`, { 
+        const res = await fetch(`/api/orders?id=${orderId}&email=${encodeURIComponent(adminEmail.toLowerCase())}`, { 
           method: "DELETE" 
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          alert("সফলভাবে ডিলিট হয়েছে! ✅");
+          alert("সফলভাবে ডিলিট হয়েছে! ✅");
           refresh(); 
         } else {
-          const errData = await res.json();
-          alert(`ডিলিট ব্যর্থ: ${errData.error || "Server Error"}`);
+          alert(`ডিলিট ব্যর্থ: ${data.error}`);
         }
       } catch (err) { 
-        alert("নেটওয়ার্ক এরর: " + err.message); 
+        alert("সার্ভার এরর: " + err.message); 
       }
     }
   };
 
   return (
     <div className="w-full space-y-4">
-      {/* ফিল্টার এবং সার্চ বার */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white dark:bg-gray-900/50 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
         <div className="flex flex-wrap gap-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
           <button onClick={() => setFilterMode("daily")} className={`px-6 py-2.5 rounded-xl text-[13px] font-black uppercase transition-all ${filterMode === "daily" ? "bg-indigo-600 text-white shadow-md" : "text-gray-500 hover:text-indigo-500"}`}>
@@ -109,8 +107,8 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
                 <th className="p-6 text-center">Manager & Note</th> 
                 <th className="p-6 text-center">Project Link</th>
                 <th className="p-6 text-center">
-                   <div className="grid grid-cols-6 gap-2 mb-2 text-[10px] text-indigo-400 font-bold">
-                     <span>USD/TASK</span><span>SELL RATE</span><span>BUY RATE</span><span>PAID</span><span>DUE</span><span>PROFIT</span>
+                   <div className="grid grid-cols-6 gap-2 mb-2 text-[10px] text-indigo-400 font-bold uppercase">
+                     <span>USD/TASK</span><span>SELL</span><span>BUY</span><span>PAID</span><span>DUE</span><span>PROFIT</span>
                    </div>
                    Financial Records
                 </th>
@@ -124,44 +122,52 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
                 const isUSD = order.totalAmountUSD > 0;
                 const sellRate = Number(order.dollarRate) || 0;
                 const buyRate = Number(order.buyRate) || 0;
+                
+                // পেমেন্ট এবং পেমেন্ট মেথড রিট্রিভ (ব্যাকএন্ড ডাটা)
                 const totalPaidBDT = order.payments?.reduce((sum, p) => sum + (Number(p.paidUSD) || 0), 0) || 0;
+                const payMethod = order.payments?.[0]?.paymentMethod || order.paymentMethod || "N/A";
+
                 const revenue = amountValue * sellRate;
                 const dueBDT = revenue - totalPaidBDT;
                 const profitBDT = (sellRate - buyRate) * amountValue;
                 const d = new Date(order.orderDate || order.createdAt);
-                const day = String(d.getDate()).padStart(2, '0');
-                const month = d.toLocaleString('default', { month: 'short' });
 
                 return (
                   <tr key={order._id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-all">
                     <td className="p-6">
                       <div className="flex items-center gap-4">
                         <div className="bg-indigo-600 text-white w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-lg shrink-0">
-                          <span className="text-[18px] font-black leading-none">{day}</span>
-                          <span className="text-[9px] uppercase">{month}</span>
+                          <span className="text-[18px] font-black leading-none">{String(d.getDate()).padStart(2, '0')}</span>
+                          <span className="text-[9px] uppercase">{d.toLocaleString('default', { month: 'short' })}</span>
                         </div>
                         <div>
-                          <div className="text-gray-900 dark:text-white uppercase font-black text-[16px] leading-tight">{order.clientName}</div>
-                          <div className="text-indigo-500 text-[11px] font-bold uppercase tracking-wider">{order.orderType}</div>
-                          <div className="text-gray-400 text-[12px] font-medium">📞 {order.phone || "N/A"}</div>
+                          <div className="text-gray-900 dark:text-white uppercase font-black text-[16px]">{order.clientName}</div>
+                          <div className="text-indigo-500 text-[11px] font-bold uppercase">{order.orderType}</div>
+                          <div className="text-gray-400 text-[12px]">📞 {order.phone || "N/A"}</div>
                         </div>
                       </div>
                     </td>
                     <td className="p-6 text-center">
                       <div className="text-gray-700 dark:text-gray-300 uppercase text-[14px] font-black italic">{order.managerName}</div>
-                      {order.note && <div className="text-[11px] text-gray-400 font-normal mt-1 max-w-[150px] mx-auto leading-tight italic truncate" title={order.note}>"{order.note}"</div>}
+                      {order.note && <div className="text-[11px] text-gray-400 font-normal mt-1 max-w-[150px] mx-auto truncate" title={order.note}>"{order.note}"</div>}
                     </td>
-                    <td className="p-6 text-center font-black">
-                      {order.pageLink ? <a href={order.pageLink.startsWith('http') ? order.pageLink : `https://${order.pageLink}`} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">🌐 Visit Link</a> : "---"}
+                    <td className="p-6 text-center">
+                      {order.pageLink ? <a href={order.pageLink.startsWith('http') ? order.pageLink : `https://${order.pageLink}`} target="_blank" rel="noreferrer" className="text-blue-500 font-black hover:underline">🌐 Visit</a> : "---"}
                     </td>
                     <td className="p-6">
-                      <div className="grid grid-cols-6 gap-2 text-center items-center py-3 px-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 font-mono text-[14px] md:text-[15px]">
+                      <div className="grid grid-cols-6 gap-2 text-center items-center py-3 px-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 font-mono text-[14px]">
                         <span className="text-indigo-600 font-black">{isUSD ? `$${amountValue}` : `${amountValue}T`}</span>
                         <span className="text-gray-400">৳{sellRate}</span>
                         <span className="text-rose-400/80">৳{buyRate}</span>
-                        <span className="text-gray-700 dark:text-gray-300">৳{totalPaidBDT.toLocaleString()}</span>
+                        
+                        {/* পেমেন্ট এবং মেথড এখানে দেখানো হচ্ছে */}
+                        <span className="text-gray-700 dark:text-gray-300">
+                            ৳{totalPaidBDT.toLocaleString()}
+                            <div className="text-[9px] text-green-500 font-bold uppercase leading-none mt-1">{payMethod}</div>
+                        </span>
+
                         <span className={`font-black ${dueBDT > 0 ? "text-red-500" : "text-green-500 opacity-40"}`}>৳{dueBDT.toLocaleString()}</span>
-                        <span className="text-green-600 font-black text-[16px]">৳{profitBDT.toLocaleString()}</span>
+                        <span className="text-green-600 font-black">৳{profitBDT.toLocaleString()}</span>
                       </div>
                     </td>
                     <td className="p-6 text-center">

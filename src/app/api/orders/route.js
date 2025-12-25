@@ -1,83 +1,128 @@
 import { connectDB } from "@/lib/mongodb";
 import Order from "@/models/Order";
-import { User } from "@/models/User";
+import User from "@/models/User";
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
 
-// ১. ডাটা দেখা (GET)
+/* ================= GET ================= */
 export async function GET(req) {
   try {
     await connectDB();
+
     const { searchParams } = new URL(req.url);
     const email = searchParams.get("email")?.toLowerCase();
-    if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+
+    if (!email) {
+      return NextResponse.json(
+        { error: "Email required" },
+        { status: 400 }
+      );
+    }
 
     const user = await User.findOne({ email });
-    const role = user?.role || "manager";
-    
-    let query = role === "admin" ? {} : { managerEmail: email };
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    const query =
+      user.role === "admin" ? {} : { managerEmail: email };
+
     const orders = await Order.find(query).sort({ createdAt: -1 });
+
     return NextResponse.json(orders);
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("GET ORDERS ERROR:", err);
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// ২. নতুন অর্ডার তৈরি (POST)
+/* ================= POST ================= */
 export async function POST(req) {
   try {
     await connectDB();
     const body = await req.json();
-    const newOrder = await Order.create(body);
-    return NextResponse.json(newOrder, { status: 201 });
+
+    const order = await Order.create(body);
+
+    return NextResponse.json(order, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("CREATE ORDER ERROR:", err);
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// ৩. ডাটা আপডেট করা (PUT)
+/* ================= PUT ================= */
 export async function PUT(req) {
   try {
     await connectDB();
     const body = await req.json();
     const { id, ...updateData } = body;
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Valid ID missing" }, { status: 400 });
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Order ID required" },
+        { status: 400 }
+      );
     }
 
-    const updated = await Order.findByIdAndUpdate(id, updateData, { new: true });
+    const updated = await Order.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    );
+
     return NextResponse.json(updated);
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("UPDATE ORDER ERROR:", err);
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
   }
 }
 
-// ৪. ডাটা ডিলিট করা (DELETE - FULLY FIXED)
+/* ================= DELETE ================= */
 export async function DELETE(req) {
   try {
     await connectDB();
     const { searchParams } = new URL(req.url);
+
     const id = searchParams.get("id");
     const email = searchParams.get("email")?.toLowerCase();
 
-    // অ্যাডমিন চেক
-    const adminUser = await User.findOne({ email });
-    if (!adminUser || adminUser.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized: Admin Only" }, { status: 403 });
+    if (!id || !email) {
+      return NextResponse.json(
+        { error: "ID and Email required" },
+        { status: 400 }
+      );
     }
 
-    // আইডি চেক এবং ডিলিট
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
+    const user = await User.findOne({ email });
+
+    if (!user || user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Admin access only" },
+        { status: 403 }
+      );
     }
 
-    const deleted = await Order.findByIdAndDelete(id);
-    if (!deleted) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
-    }
+    await Order.findByIdAndDelete(id);
 
-    return NextResponse.json({ message: "Deleted successfully" });
+    return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("DELETE ORDER ERROR:", err);
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
   }
 }
