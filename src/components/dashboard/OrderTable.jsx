@@ -183,13 +183,29 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
                       <span className={`px-4 py-1.5 rounded-full text-[14px] font-black uppercase ${order.workStatus === 'completed' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{order.workStatus}</span>
                     </td>
                     {role === "admin" && (
-                      <td className="p-6 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => setEditOrder(order)} className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md transition-transform active:scale-90"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                          <button onClick={() => handleDelete(order._id)} className="p-2.5 bg-red-100 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all active:scale-90"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                        </div>
-                      </td>
-                    )}
+  <td className="p-6 text-right">
+    <div className="flex justify-end gap-2">
+      {/* ১. এখানে সরাসরি 'order' না দিয়ে '{...order}' দেওয়া হয়েছে যাতে নতুন রেফারেন্স তৈরি হয় */}
+      <button 
+        onClick={() => setEditOrder({ ...order })} 
+        className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md transition-transform active:scale-90"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </button>
+
+      <button 
+        onClick={() => handleDelete(order._id)} 
+        className="p-2.5 bg-red-100 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all active:scale-90"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
+    </div>
+  </td>
+)}
                   </tr>
                 );
               })}
@@ -198,8 +214,9 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
         )}
       </div>
    {/* নিচে এডিট মোড-এ userEmail পাসিং ফিক্স */}
-  {editOrder && (
+{editOrder && (
     <AddOrderModal 
+      key={editOrder._id}
       editData={editOrder} 
       onClose={() => setEditOrder(null)} 
       refresh={refresh} 

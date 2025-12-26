@@ -46,48 +46,66 @@ export default function AddOrderModal({ onClose, refresh, editData = null, userE
   const profit = (sellRate - effectiveBuyRate) * commonInputValue; 
   const due = revenue - paidAmount;
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userEmail) return alert("Error: Email missing");
+    
+    // ১. ইমেইল ট্রিম এবং ভ্যালিডেশন
+    const cleanEmail = userEmail?.toLowerCase().trim();
+    if (!cleanEmail) return alert("Error: User Email missing. Please re-login.");
 
     setLoading(true);
     try {
-      const { _id, createdAt, updatedAt, payments, ...cleanForm } = form;
+      // ২. ফর্ম ডাটা থেকে অপ্রয়োজনীয় জিনিস আলাদা করা
+      const { _id, createdAt, updatedAt, payments: existingPayments, ...cleanForm } = form;
       
-      const currentPayments = editData ? editData.payments : [{ 
-        paidUSD: paidAmount, 
-        paymentMethod: form.paymentMethod, 
-        paymentDate: new Date() 
-      }];
+      // ৩. পেমেন্ট লজিক: এডিট হলে আগের পেমেন্ট থাকবে, নতুন হলে বর্তমান ডাটা দিয়ে অ্যারে হবে
+      const currentPayments = editData 
+        ? (existingPayments || []) 
+        : [{ 
+            paidUSD: paidAmount, 
+            paymentMethod: form.paymentMethod || "Bkash", 
+            paymentDate: new Date() 
+          }];
 
+      // ৪. পেলোড তৈরি (id নিশ্চিত করা এবং টাইপ কনভার্সন)
       const payload = {
         ...cleanForm,
-        id: editData ? editData._id : undefined, // এটি এডিট করার জন্য মেইন কি
-        totalAmountUSD: isAdsType ? commonInputValue : 0, 
-        taskCount: !isAdsType ? commonInputValue : 0, 
-        dollarRate: sellRate, 
-        buyRate: isAdsType ? effectiveBuyRate : 0, 
-        managerEmail: userEmail,
+        id: editData ? String(editData._id) : undefined, // এডিটের জন্য স্ট্রিং ID
+        totalAmountUSD: isAdsType ? Number(commonInputValue) : 0, 
+        taskCount: !isAdsType ? Number(commonInputValue) : 0, 
+        dollarRate: Number(sellRate), 
+        buyRate: isAdsType ? Number(effectiveBuyRate) : 0, 
+        managerEmail: cleanEmail,
         note: form.note || "",
         payments: currentPayments,
         paymentMethod: form.paymentMethod
       };
 
-      const res = await fetch("/api/orders", {
+      // ৫. API কল - এডিটের সময় ইমেইল কুয়েরি প্যারামিটারে পাঠানো (সিকিউরিটির জন্য)
+      const endpoint = editData 
+        ? `/api/orders?email=${encodeURIComponent(cleanEmail)}` 
+        : "/api/orders";
+
+      const res = await fetch(endpoint, {
         method: editData ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      const result = await res.json();
+
       if (res.ok) {
+        // সফল হলে ডাটা রিফ্রেশ এবং মডেল বন্ধ
         refresh();
         onClose();
+        alert(editData ? "Order updated successfully! ✅" : "Order saved successfully! ✅");
       } else {
-        const errorData = await res.json();
-        alert(errorData.error || "Failed to save order");
+        // সার্ভার থেকে আসা সঠিক এরর মেসেজ দেখানো
+        throw new Error(result.error || "Failed to process request");
       }
     } catch (err) {
-      alert(err.message);
+      console.error("Submit Error:", err);
+      alert("⚠️ " + err.message);
     } finally {
       setLoading(false);
     }
