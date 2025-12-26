@@ -147,24 +147,24 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
                       <div className="flex items-center gap-4">
                         <div className="bg-indigo-600 text-white w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-lg shrink-0">
                           <span className="text-[18px] font-black leading-none">{String(d.getDate()).padStart(2, '0')}</span>
-                          <span className="text-[9px] uppercase">{d.toLocaleString('default', { month: 'short' })}</span>
+                          <span className="text-[15px] uppercase">{d.toLocaleString('default', { month: 'short' })}</span>
                         </div>
                         <div>
-                          <div className="text-gray-900 dark:text-white uppercase font-black text-[16px]">{order.clientName}</div>
-                          <div className="text-indigo-500 text-[11px] font-bold uppercase">{order.orderType}</div>
+                          <div className="text-gray-900 dark:text-white uppercase font-black text-[20px]">{order.clientName}</div>
+                          <div className="text-indigo-500 text-[14px] font-bold uppercase">{order.orderType}</div>
                           <div className="text-gray-400 text-[12px]">📞 {order.phone || "N/A"}</div>
                         </div>
                       </div>
                     </td>
                     <td className="p-6 text-center">
-                      <div className="text-gray-700 dark:text-gray-300 uppercase text-[14px] font-black italic">{order.managerName}</div>
-                      {order.note && <div className="text-[11px] text-gray-400 font-normal mt-1 max-w-[150px] mx-auto truncate" title={order.note}>"{order.note}"</div>}
+                      <div className="text-gray-700 dark:text-gray-300 uppercase text-[18px] font-black italic">{order.managerName}</div>
+                      {order.note && <div className="text-[12px] text-gray-400 font-normal mt-1 max-w-[150px] mx-auto truncate" title={order.note}>"{order.note}"</div>}
                     </td>
                     <td className="p-6 text-center">
                       {order.pageLink ? <a href={order.pageLink.startsWith('http') ? order.pageLink : `https://${order.pageLink}`} target="_blank" rel="noreferrer" className="text-blue-500 font-black hover:underline">🌐 Visit</a> : "---"}
                     </td>
                     <td className="p-6">
-                      <div className="grid grid-cols-6 gap-2 text-center items-center py-3 px-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 font-mono text-[14px]">
+                      <div className="grid grid-cols-6 gap-2 text-center items-center py-3 px-4 bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800 font-mono text-[16px]">
                         <span className="text-indigo-600 font-black">{isUSD ? `$${amountValue}` : `${amountValue}T`}</span>
                         <span className="text-gray-400">৳{sellRate}</span>
                         <span className="text-rose-400/80">৳{buyRate}</span>
@@ -172,7 +172,7 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
                         {/* পেমেন্ট এবং মেথড এখানে দেখানো হচ্ছে */}
                         <span className="text-gray-700 dark:text-gray-300">
                             ৳{totalPaidBDT.toLocaleString()}
-                            <div className="text-[9px] text-green-500 font-bold uppercase leading-none mt-1">{payMethod}</div>
+                            <div className="text-[11px] text-green-500 font-bold uppercase leading-none mt-1">{payMethod}</div>
                         </span>
 
                         <span className={`font-black ${dueBDT > 0 ? "text-red-500" : "text-green-500 opacity-40"}`}>৳{dueBDT.toLocaleString()}</span>
@@ -180,7 +180,7 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
                       </div>
                     </td>
                     <td className="p-6 text-center">
-                      <span className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase ${order.workStatus === 'completed' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{order.workStatus}</span>
+                      <span className={`px-4 py-1.5 rounded-full text-[14px] font-black uppercase ${order.workStatus === 'completed' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{order.workStatus}</span>
                     </td>
                     {role === "admin" && (
                       <td className="p-6 text-right">
