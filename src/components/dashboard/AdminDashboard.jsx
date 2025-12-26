@@ -17,39 +17,50 @@ export default function AdminDashboard() {
   const [authLoading, setAuthLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
+ // ১. ইউজার অথেন্টিকেশন এবং রোল চেক এক সাথে
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.push("/login");
       } else {
+        const userEmail = user.email.toLowerCase().trim();
         setCurrentUser(user);
+        
         try {
-          // রোল চেক করার জন্য API কল
-          const res = await fetch(`/api/users?email=${user.email.toLowerCase()}`);
-          const userData = await res.json();
-          setUserRole(userData?.role || "manager"); 
+          // রোল এবং ডাটা লোড করার রিকোয়েস্ট একসাথেই হ্যান্ডেল করা
+          const [roleRes, orderRes] = await Promise.all([
+            fetch(`/api/users?email=${userEmail}`),
+            fetch(`/api/orders?email=${userEmail}`)
+          ]);
+
+          const userData = await roleRes.json();
+          const orderData = await orderRes.json();
+
+          setUserRole(userData?.role || "manager");
+          setOrders(Array.isArray(orderData) ? orderData : []);
+          
         } catch (err) {
-          console.error("Role fetch error:", err);
+          console.error("Initialization Error:", err);
           setUserRole("manager");
+        } finally {
+          // সব কিছু শেষ হলে লোডার বন্ধ হবে
+          setAuthLoading(false);
+          setLoading(false);
         }
-        setAuthLoading(false);
       }
     });
+
     return () => unsubscribe();
   }, [router]);
 
-  // ইউজার রোল কনফার্ম হওয়ার পর ডাটা লোড হবে
-  useEffect(() => {
-    if (currentUser?.email) {
-      loadData();
-    }
-  }, [currentUser]);
-
+  // ২. লোড ডাটা ফাংশন (যা বাটন বা এডিট শেষে কল হবে)
   const loadData = async () => {
+    if (!auth.currentUser) return;
+    
     try {
       setLoading(true);
-      // ব্যাকএন্ডে ইমেইল পাঠানো হচ্ছে যাতে অ্যাডমিন রোল ডিটেক্ট করে সব ডেটা পাঠায়
-      const res = await fetch(`/api/orders?email=${auth.currentUser.email.toLowerCase()}`);
+      const userEmail = auth.currentUser.email.toLowerCase().trim();
+      const res = await fetch(`/api/orders?email=${userEmail}`);
       const data = await res.json();
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) { 
@@ -59,11 +70,14 @@ export default function AdminDashboard() {
     }
   };
 
+  // ৩. লগআউট ফাংশন
   const handleLogout = async () => {
     try {
       await signOut(auth);
       router.push("/");
-    } catch (error) { console.error("Logout Error:", error); }
+    } catch (error) { 
+      console.error("Logout Error:", error); 
+    }
   };
 
   const calcStats = (data) => {

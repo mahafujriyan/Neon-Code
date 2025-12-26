@@ -2,6 +2,7 @@
 import { useState } from "react";
 import AddOrderModal from "../AddFroms/AddOrderForms";
 import { useAuth } from "@/context/AuthContext"; 
+import { auth } from "@/lib/firebase";
 
 export default function OrderTable({ orders = [], refresh, role, selectedDate }) {
   const [editOrder, setEditOrder] = useState(null);
@@ -41,14 +42,19 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
 
   filteredData = filteredData.sort((a, b) => new Date(b.orderDate || b.createdAt) - new Date(a.orderDate || a.createdAt));
 
+ // ... আপনার কোড একই থাকবে ...
+
   const handleDelete = async (orderId) => {
-    const currentUserRole = user?.role || role; 
+    // ১. আপনার পাঠানো role প্রপস বা Context থেকে রোল চেক
+    const currentUserRole = role || user?.role; 
+    
     if (currentUserRole?.toLowerCase() !== "admin") {
       alert(`⚠️ পারমিশন নেই! আপনার বর্তমান রোল: ${currentUserRole}`);
       return;
     }
 
-    const adminEmail = user?.email;
+    // ২. ইমেইল ট্রিম করা হয়েছে যাতে কোনো স্পেসের কারণে এরর না আসে
+    const adminEmail = user?.email || auth.currentUser?.email;
     if (!adminEmail) {
       alert("⚠️ সেশন পাওয়া যাচ্ছে না। পেজটি রিফ্রেশ দিয়ে আবার চেষ্টা করুন।");
       return;
@@ -56,7 +62,7 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
 
     if (window.confirm("আপনি কি নিশ্চিতভাবে এই অর্ডারটি ডিলিট করতে চান?")) {
       try {
-        const res = await fetch(`/api/orders?id=${orderId}&email=${encodeURIComponent(adminEmail.toLowerCase())}`, { 
+        const res = await fetch(`/api/orders?id=${orderId}&email=${encodeURIComponent(adminEmail.toLowerCase().trim())}`, { 
           method: "DELETE" 
         });
 
@@ -73,6 +79,9 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
       }
     }
   };
+
+ 
+
 
   return (
     <div className="w-full space-y-4">
@@ -188,14 +197,15 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
           </table>
         )}
       </div>
-      {editOrder && (
-        <AddOrderModal 
-          editData={editOrder} 
-          onClose={() => setEditOrder(null)} 
-          refresh={refresh} 
-          userEmail={user?.email || editOrder.managerEmail} 
-        />
-      )}
+   {/* নিচে এডিট মোড-এ userEmail পাসিং ফিক্স */}
+  {editOrder && (
+    <AddOrderModal 
+      editData={editOrder} 
+      onClose={() => setEditOrder(null)} 
+      refresh={refresh} 
+      userEmail={user?.email || auth.currentUser?.email || editOrder.managerEmail} 
+    />
+  )}
     </div>
   );
 }

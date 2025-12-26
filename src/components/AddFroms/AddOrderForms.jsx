@@ -23,8 +23,6 @@ export default function AddOrderModal({ onClose, refresh, editData = null, userE
     if (editData) {
       const totalPaid = editData.payments?.reduce((s, p) => s + (Number(p.paidUSD) || 0), 0) || 0;
       const existingValue = (Number(editData.totalAmountUSD) > 0) ? editData.totalAmountUSD : (editData.taskCount || "");
-      
-      // পেমেন্ট মেথড রিট্রিভ করা
       const lastPaymentMethod = editData.payments?.[0]?.paymentMethod || editData.paymentMethod || "Bkash";
 
       setForm({
@@ -54,10 +52,8 @@ export default function AddOrderModal({ onClose, refresh, editData = null, userE
 
     setLoading(true);
     try {
-      // অপ্রয়োজনীয় ডাটা বাদ দিয়ে ফ্রেশ ডাটা নেওয়া
       const { _id, createdAt, updatedAt, payments, ...cleanForm } = form;
       
-      // নতুন অর্ডারের জন্য পেমেন্ট অ্যারে তৈরি করা
       const currentPayments = editData ? editData.payments : [{ 
         paidUSD: paidAmount, 
         paymentMethod: form.paymentMethod, 
@@ -66,6 +62,7 @@ export default function AddOrderModal({ onClose, refresh, editData = null, userE
 
       const payload = {
         ...cleanForm,
+        id: editData ? editData._id : undefined, // এটি এডিট করার জন্য মেইন কি
         totalAmountUSD: isAdsType ? commonInputValue : 0, 
         taskCount: !isAdsType ? commonInputValue : 0, 
         dollarRate: sellRate, 
@@ -73,10 +70,8 @@ export default function AddOrderModal({ onClose, refresh, editData = null, userE
         managerEmail: userEmail,
         note: form.note || "",
         payments: currentPayments,
-        paymentMethod: form.paymentMethod // ব্যাকআপ মেথড
+        paymentMethod: form.paymentMethod
       };
-
-      if (editData) payload.id = editData._id;
 
       const res = await fetch("/api/orders", {
         method: editData ? "PUT" : "POST",
@@ -163,5 +158,5 @@ export default function AddOrderModal({ onClose, refresh, editData = null, userE
         </form>
       </div>
     </div>
-  ); 
+  );
 }

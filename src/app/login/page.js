@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,27 +11,34 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setMessage("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email.toLowerCase(), password);
       router.push("/dashboard/admin");
     } catch (err) {
-      setError("INVALID EMAIL OR PASSWORD");
+      setError("ইমেইল অথবা পাসওয়ার্ড ভুল!");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("আগে আপনার ইমেইলটি লিখুন!");
+      return;
+    }
     try {
-      await signInWithPopup(auth, googleProvider);
-      router.push("/dashboard/admin");
+      await sendPasswordResetEmail(auth, email);
+      setMessage("পাসওয়ার্ড রিসেট লিংক ইমেইলে পাঠানো হয়েছে!");
+      setError("");
     } catch (err) {
-      setError("GOOGLE LOGIN FAILED");
+      setError("ইমেইলটি সঠিক নয় অথবা ইউজার খুঁজে পাওয়া যায়নি।");
     }
   };
 
@@ -47,20 +54,21 @@ export default function LoginPage() {
           <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase italic">Welcome Back</h2>
           <p className="mt-1 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">NeonCode Access Portal</p>
 
-          {error && <p className="text-red-500 text-[10px] font-bold mt-4 p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20 tracking-tighter uppercase">{error}</p>}
+          {error && <p className="text-red-500 text-[10px] font-bold mt-4 p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20 uppercase">{error}</p>}
+          {message && <p className="text-green-500 text-[10px] font-bold mt-4 p-3 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/20 uppercase">{message}</p>}
 
           <form onSubmit={handleLogin} className="mt-8 space-y-4">
             <input type="email" placeholder="EMAIL ADDRESS" value={email} onChange={e => setEmail(e.target.value)} className="w-full rounded-2xl border border-gray-100 px-5 py-4 text-xs font-bold outline-none dark:bg-zinc-900 dark:border-zinc-800 focus:ring-2 ring-indigo-500/20" required />
             <input type="password" placeholder="PASSWORD" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-2xl border border-gray-100 px-5 py-4 text-xs font-bold outline-none dark:bg-zinc-900 dark:border-zinc-800 focus:ring-2 ring-indigo-500/20" required />
+            
+            <div className="text-right">
+              <button type="button" onClick={handleForgotPassword} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase hover:underline">Forgot Password?</button>
+            </div>
+
             <button type="submit" disabled={loading} className="w-full rounded-2xl bg-black py-4 text-white font-black uppercase text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all dark:bg-white dark:text-black disabled:opacity-50">
               {loading ? "AUTHENTICATING..." : "LOG IN"}
             </button>
           </form>
-
-          <button onClick={handleGoogleLogin} className="mt-4 w-full flex items-center justify-center gap-3 rounded-2xl border border-gray-100 py-4 font-black uppercase text-[10px] hover:bg-gray-50 dark:border-zinc-900 dark:hover:bg-zinc-900 transition-all">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4" alt="Google" />
-            Continue with Google
-          </button>
 
           <p className="mt-8 text-center text-[10px] font-bold text-zinc-400 uppercase">
             New here? <Link href="/register" className="text-indigo-600 dark:text-indigo-400">Create an account</Link>
