@@ -141,7 +141,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3 w-full lg:w-auto">
-            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none px-4 py-2.5 rounded-xl text-[11px] font-bold outline-none ring-1 ring-slate-200 dark:ring-slate-800 transition-all cursor-pointer shadow-sm dark:text-white" />
+            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-gray-200 dark:bg-slate-900 border-none px-4 py-2.5 rounded-xl text-[11px] font-bold outline-none ring-1 ring-slate-200 dark:ring-slate-800 transition-all cursor-pointer shadow-sm dark:text-white" />
             <button onClick={() => setShowModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold uppercase text-[10px] shadow-lg active:scale-95 transition-all">+ Create Order</button>
             <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shadow-inner border border-slate-200 dark:border-slate-800">
                <span className="px-3 text-[9px] font-black uppercase text-indigo-500">{userRole}</span>

@@ -166,7 +166,15 @@ const handleSubmit = async (e) => {
           <div className="space-y-1"><label className="text-[10px] font-black uppercase ml-2 text-gray-400">Order Note</label><textarea rows="2" placeholder="অর্ডারের তথ্য..." className={`${inputClass} resize-none py-3`} value={form.note} onChange={(e)=>setForm({...form, note: e.target.value})}></textarea></div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1"><label className="text-[10px] font-black uppercase ml-2 text-gray-400">Assigned Manager</label><select className={inputClass} value={form.managerName} onChange={(e)=>setForm({...form, managerName: e.target.value})}><option value="Sagor">Sagor</option><option value="Shahed">Shahed</option><option value="Mahafuj">Mahafuj</option><option value="M Abdur Rahaman">M Abdur Rahaman</option></select></div>
+            <div className="space-y-1"><label className="text-[10px] font-black uppercase ml-2 text-gray-400">Assigned Manager</label><select className={inputClass} value={form.managerName} onChange={(e)=>setForm({...form, managerName: e.target.value})}><option value="Sagor">Sagor</option>
+            <option value="Shahed">Shahed</option>
+            <option value="Mahafuj">Mahafuj</option>
+            <option value="M Abdur Rahaman">M Abdur Rahaman</option>
+            <option value="Iqbal">Iqbal</option>
+            <option value="Abdullah Developer">Abdullah Developer</option>
+            <option value="Abdullah Designer">Abdullah Designer</option>
+            <option value="Redown">Redown</option>
+            </select></div>
             <div className="space-y-1"><label className="text-[10px] font-black uppercase ml-2 text-gray-400">Work Status</label><select className={inputClass} value={form.workStatus} onChange={(e)=>setForm({...form, workStatus: e.target.value})}><option value="pending">Pending</option><option value="running">Running</option><option value="completed">Completed</option></select></div>
           </div>
 
