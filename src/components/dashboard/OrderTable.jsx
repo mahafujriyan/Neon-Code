@@ -170,13 +170,13 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
                         <span className="text-rose-400/80">৳{buyRate}</span>
                         
                         {/* পেমেন্ট এবং মেথড এখানে দেখানো হচ্ছে */}
-                        <span className="text-gray-700 dark:text-gray-300">
+                        <span className="text-gray-700 dark:text-gray-300 px-5">
                             ৳{totalPaidBDT.toLocaleString()}
                             <div className="text-[11px] text-green-500 font-bold uppercase leading-none mt-1">{payMethod}</div>
                         </span>
 
-                        <span className={`font-black ${dueBDT > 0 ? "text-red-500" : "text-green-500 opacity-40"}`}>৳{dueBDT.toLocaleString()}</span>
-                        <span className="text-green-600 font-black">৳{profitBDT.toLocaleString()}</span>
+                        <span className={`font-black px-7 ${dueBDT > 0 ? "text-red-500" : "text-green-500 "}`}>৳{dueBDT.toLocaleString()}</span>
+                        <span className="text-green-600 font-black pl-10">৳{profitBDT.toLocaleString()}</span>
                       </div>
                     </td>
                     <td className="p-6 text-center">
