@@ -11,7 +11,7 @@ export default function AddOrderModal({ onClose, refresh, editData = null, userE
     managerName: "Sagor",
     totalAmountUSD: "", 
     taskCount: "", 
-    dollarRate: 135,    
+    dollarRate: 150,    
     buyRate: 130,       
     initialPaidUSD: "", 
     paymentMethod: "Bkash", 

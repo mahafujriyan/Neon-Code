@@ -33,14 +33,14 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
     }
   });
 
-  if (searchQuery) {
+if (searchQuery) {
     filteredData = filteredData.filter((o) => 
       o.phone?.includes(searchQuery) || 
-      o.clientName?.toLowerCase().includes(searchQuery.toLowerCase())
+      o.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.managerName?.toLowerCase().includes(searchQuery.toLowerCase()) 
     );
   }
-
-  filteredData = filteredData.sort((a, b) => new Date(b.orderDate || b.createdAt) - new Date(a.orderDate || a.createdAt));
+filteredData = filteredData.sort((a, b) => new Date(b.orderDate || b.createdAt) - new Date(a.orderDate || a.createdAt));
 
  // ... আপনার কোড একই থাকবে ...
 
