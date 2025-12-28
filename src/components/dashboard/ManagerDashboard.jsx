@@ -3,13 +3,15 @@ import { useEffect, useState } from "react";
 import AddOrderModal from "../AddFroms/AddOrderForms";
 import OrderTable from "./OrderTable";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-export default function ManagerDashboard({ user, role, onLogout }) {
+
+export default function ManagerDashboard({ user, role, onLogout ,  onGoExpense,}) {
   const [orders, setOrders] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-
+const router = useRouter();
   useEffect(() => {
     if (user && role) loadData();
   }, [user, role]);

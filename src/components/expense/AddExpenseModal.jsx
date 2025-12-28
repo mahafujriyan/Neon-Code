@@ -2,6 +2,7 @@
 import { useState } from "react";
 
 const EMPLOYEES = [
+  "Sagor",
   "Shahed",
   "Mahafuj",
   "M Abdur Rahaman",
@@ -11,17 +12,18 @@ const EMPLOYEES = [
   "Redown",
 ];
 
-export default function AddExpenseModal({ onClose, refresh, user }) {
-  // 🔐 SAFETY GUARD
-  if (!user || !user.email) return null;
+// ✅ editData প্রপসটি যোগ করা হয়েছে
+export default function AddExpenseModal({ onClose, refresh, user, editData }) {
+  // 🔐 SAFETY
+  if (!user?.email) return null;
 
-  const [tab, setTab] = useState("general");
+  // ✅ যদি editData থাকে তবে সেগুলো ডিফল্ট ভ্যালু হিসেবে বসবে
+  const [tab, setTab] = useState(editData?.expenseType || "general");
   const [form, setForm] = useState({
-    expenseType: "general",
-    category: "Office Supplies",
-    employeeName: "",
-    reason: "",
-    amount: "",
+    category: editData?.category || "Office Supplies",
+    employeeName: editData?.employeeName || "",
+    reason: editData?.reason || "",
+    amount: editData?.amount || "",
   });
 
   const submit = async () => {
@@ -31,29 +33,38 @@ export default function AddExpenseModal({ onClose, refresh, user }) {
     }
 
     if (tab === "employee" && !form.employeeName) {
-      alert("Please select employee name");
+      alert("Please select employee");
       return;
     }
 
+    // ✅ এডিট মোড না কি অ্যাড মোড সেটা চেক করা হচ্ছে
+    const isEdit = !!editData?._id;
+
     await fetch("/api/expenses", {
-      method: "POST",
+      method: isEdit ? "PUT" : "POST", // এডিট হলে PUT হবে
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        id: isEdit ? editData._id : undefined, // এডিট হলে আইডি পাঠাবে
+        isUpdate: isEdit ? true : undefined,   // API কে সিগন্যাল দিবে এটা আপডেট
         expenseType: tab,
+
+        // GENERAL
         category: tab === "general" ? form.category : undefined,
 
-        // ✅ EMPLOYEE LOGIC
+        // EMPLOYEE
         employeeName: tab === "employee" ? form.employeeName : undefined,
-        employeeEmail: tab === "employee" ? user.email : undefined,
+        employeeEmail: tab === "employee" ? (editData?.employeeEmail || user.email) : undefined,
 
+        // COMMON
         reason: form.reason,
         amount: Number(form.amount),
 
-        managerName: user.name || "Unknown",
-        managerEmail: user.email,
-        createdByEmail: user.email,
+        // 🔥 IMPORTANT (Manager visibility)
+        managerName: editData?.managerName || user.name || "Unknown",
+        managerEmail: editData?.managerEmail || user.email,
+        createdByEmail: editData?.createdByEmail || user.email,
 
-        status: "pending", // 🔥 ADMIN WILL APPROVE
+        status: editData?.status || "pending",
       }),
     });
 
@@ -64,10 +75,13 @@ export default function AddExpenseModal({ onClose, refresh, user }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white w-[420px] rounded-2xl p-6 space-y-4">
-        
+
         {/* HEADER */}
         <div className="flex justify-between items-center">
-          <h2 className="font-black text-lg uppercase">Add Expense</h2>
+          {/* ✅ টাইটেল পরিবর্তন হবে এডিট মোড অনুযায়ী */}
+          <h2 className="font-black text-lg uppercase">
+            {editData ? "Edit Expense" : "Add Expense"}
+          </h2>
           <button onClick={onClose} className="text-xl font-black">
             &times;
           </button>
@@ -93,7 +107,7 @@ export default function AddExpenseModal({ onClose, refresh, user }) {
           </button>
         </div>
 
-        {/* GENERAL EXPENSE */}
+        {/* GENERAL */}
         {tab === "general" && (
           <select
             className="w-full p-3 border rounded-xl"
@@ -112,10 +126,9 @@ export default function AddExpenseModal({ onClose, refresh, user }) {
           </select>
         )}
 
-        {/* EMPLOYEE EXPENSE */}
+        {/* EMPLOYEE */}
         {tab === "employee" && (
           <>
-            {/* EMPLOYEE NAME */}
             <select
               className="w-full p-3 border rounded-xl"
               value={form.employeeName}
@@ -131,9 +144,8 @@ export default function AddExpenseModal({ onClose, refresh, user }) {
               ))}
             </select>
 
-            {/* EMPLOYEE EMAIL (READ ONLY) */}
             <input
-              value={user.email}
+              value={editData?.employeeEmail || user.email}
               readOnly
               className="w-full p-3 border rounded-xl bg-gray-100 text-gray-500 font-bold cursor-not-allowed"
             />
@@ -145,7 +157,9 @@ export default function AddExpenseModal({ onClose, refresh, user }) {
           placeholder="Reason"
           className="w-full p-3 border rounded-xl"
           value={form.reason}
-          onChange={(e) => setForm({ ...form, reason: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, reason: e.target.value })
+          }
         />
 
         <input
@@ -153,14 +167,17 @@ export default function AddExpenseModal({ onClose, refresh, user }) {
           placeholder="Amount (৳)"
           className="w-full p-3 border rounded-xl"
           value={form.amount}
-          onChange={(e) => setForm({ ...form, amount: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, amount: e.target.value })
+          }
         />
 
         <button
           onClick={submit}
           className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black hover:bg-indigo-700"
         >
-          Save Expense
+          {/* ✅ বাটন টেক্সট এডিট মোড অনুযায়ী পরিবর্তন হবে */}
+          {editData ? "Update Expense" : "Save Expense"}
         </button>
       </div>
     </div>

@@ -67,7 +67,8 @@ export default function DashboardPage() {
         <ManagerDashboard 
           user={auth.currentUser} 
           role={userRole} 
-          onLogout={handleLogout} 
+          onLogout={handleLogout}
+    
         />
       )}
     </>
