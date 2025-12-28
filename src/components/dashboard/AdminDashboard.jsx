@@ -126,12 +126,15 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen p-4 md:p-8 bg-[#f8fafc] dark:bg-[#020617] text-gray-900 dark:text-white font-sans transition-all">
       {/* TOP BAR */}
+      
+
       <div className="sticky top-0 z-50 mb-10 backdrop-blur-xl bg-white/80 dark:bg-[#020617]/90 border border-slate-200 dark:border-slate-800/60 rounded-3xl p-4 md:p-5 shadow-xl">
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-4 w-full lg:w-auto">
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg ">
              <Image src="/company logo .jpg" alt="Logo" width={28} height={28}></Image>
             </div>
+            
             <div>
               <h1 className="text-xl font-black uppercase tracking-tighter text-indigo-600 dark:text-indigo-400">Admin Control Panel</h1>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -139,8 +142,15 @@ export default function AdminDashboard() {
                 Total Records: {orders.length}
               </p>
             </div>
+            
           </div>
           <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3 w-full lg:w-auto">
+              <button
+          onClick={() => router.push("/dashboard/expense")}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 border-none px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase  shadow-lg active:scale-95 transition-all"
+        >
+         Expenses
+        </button>
             <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="bg-gray-200 dark:bg-slate-900 border-none px-4 py-2.5 rounded-xl text-[11px] font-bold outline-none ring-1 ring-slate-200 dark:ring-slate-800 transition-all cursor-pointer shadow-sm dark:text-white" />
             <button onClick={() => setShowModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold uppercase text-[10px] shadow-lg active:scale-95 transition-all">+ Create Order</button>
             <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shadow-inner border border-slate-200 dark:border-slate-800">
@@ -150,7 +160,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-
+  
       {/* STATS */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-12">
         {/* Monthly */}

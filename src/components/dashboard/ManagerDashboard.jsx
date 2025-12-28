@@ -89,6 +89,12 @@ export default function ManagerDashboard({ user, role, onLogout }) {
           </div>
           
           <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3 w-full lg:w-auto">
+              <button
+            onClick={() => router.push("/dashboard/expense")}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-bold uppercase text-[10px] shadow-lg active:scale-95 transition-all"
+          >
+            Expenses
+          </button>
             <input 
               type="date" 
               value={selectedDate}
