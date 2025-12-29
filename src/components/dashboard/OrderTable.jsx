@@ -213,16 +213,17 @@ filteredData = filteredData.sort((a, b) => new Date(b.orderDate || b.createdAt) 
           </table>
         )}
       </div>
-   {/* নিচে এডিট মোড-এ userEmail পাসিং ফিক্স */}
 {editOrder && (
-    <AddOrderModal 
-      key={editOrder._id}
-      editData={editOrder} 
-      onClose={() => setEditOrder(null)} 
-      refresh={refresh} 
-      userEmail={user?.email || auth.currentUser?.email || editOrder.managerEmail} 
-    />
-  )}
+  <AddOrderModal 
+    key={editOrder._id}
+    editData={editOrder} 
+    onClose={() => setEditOrder(null)} 
+    refresh={refresh} 
+    /* অ্যাডমিন এডিট করলে যাতে অর্ডারের মালিক (ম্যানেজার) পরিবর্তন না হয়, 
+       তাই আগে editOrder.managerEmail কে প্রাধান্য দিতে হবে */
+    userEmail={editOrder.managerEmail || user?.email || auth.currentUser?.email} 
+  />
+)}
     </div>
   );
 }

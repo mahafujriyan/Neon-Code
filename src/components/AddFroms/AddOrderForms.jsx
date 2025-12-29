@@ -48,7 +48,9 @@ export default function AddOrderModal({ onClose, refresh, editData = null, userE
 
 const handleSubmit = async (e) => {
     e.preventDefault();
-    const cleanEmail = userEmail?.toLowerCase().trim();
+    // ✅ এডিট মোড হলে আগের ইমেইলটাই ব্যবহার হবে, অ্যাডমিনেরটা দিয়ে রিপ্লেস হবে না
+    const cleanEmail = editData?.managerEmail || userEmail?.toLowerCase().trim();
+    
     if (!cleanEmail) return alert("Error: User Email missing.");
 
     setLoading(true);
