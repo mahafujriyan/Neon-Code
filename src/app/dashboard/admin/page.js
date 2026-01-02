@@ -11,27 +11,36 @@ export default function AdminPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // ১. প্রথমেই চেক করি ব্রাউজারে আগে থেকে রোল সেভ করা আছে কিনা (স্পিড বাড়ানোর জন্য)
+    const cachedRole = sessionStorage.getItem("user-role");
+    if (cachedRole === "admin") {
+      setIsAdmin(true);
+      setLoading(false);
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // যদি ক্যাশে না থাকে বা ইউজারের ইমেইল নতুন হয় তবেই এপিআই কল হবে
+        const userEmail = user.email.toLowerCase().trim();
+        
         try {
-          // MongoDB API থেকে ইউজারের রোল চেক করা
-          const res = await fetch(`/api/users?email=${user.email}`);
+          const res = await fetch(`/api/users?email=${userEmail}`);
           const userData = await res.json();
 
           if (userData?.role === "admin") {
+            sessionStorage.setItem("user-role", "admin"); // রোল সেভ করে রাখা হলো
             setIsAdmin(true);
             setLoading(false);
           } else {
-            // যদি ইউজার এডমিন না হয়, তাকে ড্যাশবোর্ড বা অন্য কোথাও পাঠিয়ে দেওয়া
-            // এখানে আপনি চাইলে ManagerDashboard ও দেখাতে পারেন অথবা রিডাইরেক্ট করতে পারেন
-            router.push("/dashboard"); 
+            sessionStorage.removeItem("user-role");
+            router.push("/dashboard");
           }
         } catch (error) {
           console.error("Security Check Error:", error);
           router.push("/login");
         }
       } else {
-        // লগইন না থাকলে লগইন পেজে রিডাইরেক্ট
+        sessionStorage.removeItem("user-role");
         router.push("/login");
       }
     });
@@ -39,7 +48,6 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // সিকিউরিটি চেকিং লোডার
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-white dark:bg-[#020617]">
@@ -47,15 +55,14 @@ export default function AdminPage() {
           <div className="w-16 h-16 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
         </div>
         <p className="mt-6 text-indigo-600 font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">
-          NeonCode Admin Verifying...
+          NeonCode Security Checking...
         </p>
       </div>
     );
   }
 
-  
   return (
-    <div className="animate-in fade-in duration-700">
+    <div className="animate-in fade-in duration-500">
       <AdminDashboard user={auth.currentUser} />
     </div>
   );
