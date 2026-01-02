@@ -53,12 +53,7 @@ const router = useRouter();
 
   const filteredOrders = orders.filter(o => new Date(o.orderDate || o.createdAt).toISOString().split('T')[0] === selectedDate);
   
-  // Monthly Data Filter
-  // const mStats = calcStats(orders.filter(o => {
-  //   const d = new Date(o.orderDate || o.createdAt);
-  //   const now = new Date();
-  //   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  // }));
+
 // --- এই অংশটুকু পরিবর্তন করুন ---
 const monthlyOrders = orders.filter(o => {
   const d = new Date(o.orderDate || o.createdAt);
