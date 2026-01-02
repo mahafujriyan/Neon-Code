@@ -9,7 +9,9 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
   const [filterMode, setFilterMode] = useState("daily");
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuth(); 
-
+const dObj = new Date(selectedDate);
+  const selectedMonth = dObj.getMonth();
+  const selectedYear = dObj.getFullYear();
   const getLocalDate = (dateInput) => {
     const d = new Date(dateInput);
     if (isNaN(d.getTime())) return "";
@@ -18,20 +20,23 @@ export default function OrderTable({ orders = [], refresh, role, selectedDate })
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   };
-
-  let filteredData = orders.filter((o) => {
+let filteredData = orders.filter((o) => {
     const orderDateObj = new Date(o.orderDate || o.createdAt);
     const orderDateStr = getLocalDate(orderDateObj);
+
     if (filterMode === "daily") {
+      // ডেইলি ভিউ আগের মতোই থাকবে
       return orderDateStr === selectedDate;
     } else {
-      const now = new Date();
+      // মান্থলি ভিউ এখন আর current month দেখাবে না, 
+      // বরং আপনি ক্যালেন্ডারে যে মাস সিলেক্ট করেছেন সেটি দেখাবে
       return (
-        orderDateObj.getFullYear() === now.getFullYear() &&
-        orderDateObj.getMonth() === now.getMonth()
+        orderDateObj.getFullYear() === selectedYear &&
+        orderDateObj.getMonth() === selectedMonth
       );
     }
   });
+ 
 
 if (searchQuery) {
     filteredData = filteredData.filter((o) => 
