@@ -73,22 +73,21 @@ export default function ExpenseDashboard({ user, role }) {
       </div>
 
       {/* ===== ADMIN ONLY SUMMARY ===== */}
-      {role === "admin" && (
+    
         <EmployeeExpenseSummary expenses={expenses} />
-      )}
+    
 
       {/* ===== TABLE ===== */}
-      <ExpenseTable
-        expenses={expenses}
-        role={role}
-        user={user}
-        refresh={loadData}
-        // ✅ টেবিল থেকে এডিট বাটন ক্লিক করলে যা হবে
-        onEdit={(data) => {
-            setEditData(data);
-            setShowModal(true);
-        }}
-      />
+   <ExpenseTable
+  expenses={expenses}
+  role={role}
+  user={user}
+  refresh={loadData}
+  onEdit={(data) => {
+    setEditData(data);
+    setShowModal(true);
+  }}
+/>
 
       {/* ===== MODAL (Add & Edit Both) ===== */}
       {showModal && user && (

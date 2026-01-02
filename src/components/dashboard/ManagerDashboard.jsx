@@ -4,6 +4,7 @@ import AddOrderModal from "../AddFroms/AddOrderForms";
 import OrderTable from "./OrderTable";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import ServiceTypeChart from "./ServiceTypeChart";
 
 
 export default function ManagerDashboard({ user, role, onLogout ,  onGoExpense,}) {
@@ -53,12 +54,20 @@ const router = useRouter();
   const filteredOrders = orders.filter(o => new Date(o.orderDate || o.createdAt).toISOString().split('T')[0] === selectedDate);
   
   // Monthly Data Filter
-  const mStats = calcStats(orders.filter(o => {
-    const d = new Date(o.orderDate || o.createdAt);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }));
+  // const mStats = calcStats(orders.filter(o => {
+  //   const d = new Date(o.orderDate || o.createdAt);
+  //   const now = new Date();
+  //   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  // }));
+// --- এই অংশটুকু পরিবর্তন করুন ---
+const monthlyOrders = orders.filter(o => {
+  const d = new Date(o.orderDate || o.createdAt);
+  const now = new Date();
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+});
 
+// এখন mStats এ monthlyOrders পাঠিয়ে দিন
+const mStats = calcStats(monthlyOrders);
   // Daily Data Filter
   const tStats = calcStats(filteredOrders);
 
@@ -155,7 +164,9 @@ const router = useRouter();
             </div>
         </div>
       </div>
-
+<div className="mb-10">
+        <ServiceTypeChart orders={monthlyOrders} />
+      </div>
       {/* TABLE SECTION */}
       <div className="bg-white dark:bg-[#0f172a] rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800/60 overflow-hidden">
         <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">

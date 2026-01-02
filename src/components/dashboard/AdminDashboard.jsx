@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import AddOrderModal from "../AddFroms/AddOrderForms";
 import OrderTable from "./OrderTable";
 import Image from "next/image";
+import ServiceTypeChart from "./ServiceTypeChart";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -195,7 +196,10 @@ export default function AdminDashboard() {
             </div>
         </div>
       </div>
-
+{/* Typewise service */}
+<div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-10">
+    <ServiceTypeChart orders={monthlyOrders} />
+</div>
       {/* TABLE */}
       <div className="bg-white dark:bg-[#0f172a] rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800/60 overflow-hidden">
         <OrderTable orders={orders} refresh={loadData} role={userRole} selectedDate={selectedDate} />

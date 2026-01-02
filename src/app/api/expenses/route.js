@@ -3,6 +3,7 @@ import Expense from "@/models/Expense";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
 
+// আপনার GET ফাংশনের এই অংশটুকু পরিবর্তন করুন
 export async function GET(req) {
   try {
     await connectDB();
@@ -14,7 +15,8 @@ export async function GET(req) {
     const user = await User.findOne({ email });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const query = user.role === "admin" ? {} : { createdByEmail: email };
+    // ✅ এখানে পরিবর্তন: অ্যাডমিন হোক বা ইউজার, সবাই সব ডাটা {} দেখতে পাবে
+    const query = {}; 
     const expenses = await Expense.find(query).sort({ createdAt: -1 });
 
     return NextResponse.json(expenses);
@@ -22,7 +24,6 @@ export async function GET(req) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
 export async function POST(req) {
   try {
     await connectDB();

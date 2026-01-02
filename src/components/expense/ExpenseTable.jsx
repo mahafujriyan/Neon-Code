@@ -75,19 +75,18 @@ export default function ExpenseTable({ expenses = [], role, refresh, user, onEdi
       {/* ===== TABLE ===== */}
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 sticky top-0 z-10 border-b">
-            <tr className="text-xs uppercase tracking-wider text-slate-500 font-black">
-              <th className="px-6 py-4 text-left">Date</th>
-              <th className="px-6 py-4 text-left">Type</th>
-              <th className="px-6 py-4 text-left">Category / Employee</th>
-              <th className="px-6 py-4 text-left">Reason</th>
-              <th className="px-6 py-4 text-right">Amount (৳)</th>
-              <th className="px-6 py-4 text-center">Status</th>
-              {role === "admin" && (
-                <th className="px-6 py-4 text-right">Action</th>
-              )}
-            </tr>
-          </thead>
+         <thead className="bg-slate-50 sticky top-0 z-10 border-b">
+  <tr className="text-xs uppercase tracking-wider text-slate-500 font-black">
+    <th className="px-6 py-4 text-left">Date</th>
+    <th className="px-6 py-4 text-left">Type</th>
+    <th className="px-6 py-4 text-left">Category / Employee</th>
+    <th className="px-6 py-4 text-left">Reason</th>
+    <th className="px-6 py-4 text-right">Amount (৳)</th>
+    <th className="px-6 py-4 text-center">Status</th>
+    {/* ✅ এখানে 'role === admin' কন্ডিশন সরিয়ে সরাসরি Action লিখুন অথবা সবার জন্য ওপেন রাখুন */}
+    <th className="px-6 py-4 text-right">Action</th>
+  </tr>
+</thead>
 
           <tbody className="divide-y">
             {filteredExpenses.map((e) => (
