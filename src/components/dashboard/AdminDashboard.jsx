@@ -238,7 +238,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-
+// ১. বর্তমান সিলেক্ট করা তারিখ থেকে মাস এবং বছর বের করা
+  const selectedMonth = new Date(selectedDate).getMonth();
+  const selectedYear = new Date(selectedDate).getFullYear();
   // --- নতুন ফিল্টার স্টেট (ম্যানেজার সিলেক্ট করার জন্য) ---
   const [filterManager, setFilterManager] = useState("All");
 
@@ -327,12 +329,12 @@ export default function AdminDashboard() {
     }, { usdOnly: 0, taskOnly: 0, totalRev: 0, totalProfit: 0, totalPaid: 0, count: 0 });
   };
 
-  const monthlyOrders = orders.filter(o => {
-    const d = new Date(o.orderDate || o.createdAt);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
 
+const monthlyOrders = orders.filter(o => {
+    const d = new Date(o.orderDate || o.createdAt);
+    // current month (new Date()) এর বদলে selectedMonth/Year ব্যবহার করা হয়েছে
+    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+  });
   const mStats = calcStats(monthlyOrders);
   const tStats = calcStats(orders.filter(o => {
     const d = new Date(o.orderDate || o.createdAt).toISOString().split('T')[0];
