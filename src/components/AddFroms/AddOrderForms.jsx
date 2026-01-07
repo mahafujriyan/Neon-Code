@@ -176,6 +176,7 @@ const handleSubmit = async (e) => {
             <option value="Abdullah Developer">Abdullah Developer</option>
             <option value="Abdullah Designer">Abdullah Designer</option>
             <option value="Redown">Redown</option>
+            <option value="Arko">Arko</option>
             </select></div>
             <div className="space-y-1"><label className="text-[10px] font-black uppercase ml-2 text-gray-400">Work Status</label><select className={inputClass} value={form.workStatus} onChange={(e)=>setForm({...form, workStatus: e.target.value})}><option value="pending">Pending</option><option value="running">Running</option><option value="completed">Completed</option></select></div>
           </div>
