@@ -74,7 +74,7 @@ export default function AddExpenseModal({ onClose, refresh, user, editData }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white w-[420px] rounded-2xl p-6 space-y-4">
+      <div className=" w-105 rounded-2xl p-6 space-y-4">
 
         {/* HEADER */}
         <div className="flex justify-between items-center">
