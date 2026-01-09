@@ -7,22 +7,20 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
   const [filterMode, setFilterMode] = useState("daily");
   const [search, setSearch] = useState("");
 
-  // ১. তারিখ ফরম্যাট করার ফাংশন
   const getLocalDate = (dateInput) => {
     if (!dateInput) return "";
     const d = new Date(dateInput);
     return d.toISOString().split('T')[0]; 
   };
 
-  // ২. টাইম ফরম্যাট করার ফাংশন
   const getTime = (dateInput) => {
     if (!dateInput) return "";
     return new Date(dateInput).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const currentMonthStr = selectedDate.substring(0, 7); // YYYY-MM
+  const currentMonthStr = selectedDate.substring(0, 7);
 
-  // ৩. ফিল্টারিং লজিক (Daily/Monthly)
+  // ফিল্টারিং লজিক
   let filteredData = designs.filter((d) => {
     const itemDate = d.submittedDate || getLocalDate(d.createdAt);
     if (filterMode === "daily") {
@@ -32,20 +30,15 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
     }
   });
 
-  // ৪. সার্চ ফিল্টার
   if (search) {
     filteredData = filteredData.filter((d) =>
       (d?.clientId || "").toLowerCase().includes(search.toLowerCase())
     );
   }
 
-  // ড্রাইভ ইমেজ দেখার ফাংশন
   const viewImage = (link) => {
-    if (link) {
-      window.open(link, "_blank");
-    } else {
-      alert("No image link found for this design!");
-    }
+    if (link) window.open(link, "_blank");
+    else alert("No image link found!");
   };
 
   const remove = async (id) => {
@@ -61,7 +54,7 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
 
   return (
     <div className="w-full space-y-4">
-      {/* ৫. কন্ট্রোল বার: Daily/Monthly সুইচ এবং সার্চ বার */}
+      {/* কন্ট্রোল বার */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white dark:bg-slate-900/50 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="flex flex-wrap gap-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-2xl">
           <button 
@@ -89,7 +82,7 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
         </div>
       </div>
 
-      {/* ৬. ডিজাইন টেবিল */}
+      {/* ডিজাইন টেবিল */}
       <div className="overflow-x-auto rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl bg-white dark:bg-[#020617]">
         {!filteredData.length ? (
           <div className="p-20 text-center">
@@ -122,30 +115,29 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
                     </span>
                   </td>
                   <td className="p-6">
-                    <div className="flex gap-1 justify-center text-[10px] font-black">
-                      <span className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded min-w-[35px] text-center">G:{d.totalTasks}</span>
-                      <span className="bg-blue-50 text-blue-600 p-1.5 rounded min-w-[35px] text-center">C:{d.completeTasks}</span>
-                      <span className="bg-amber-50 text-amber-600 p-1.5 rounded min-w-[35px] text-center">P:{d.pendingTasks}</span>
-                      <span className="bg-emerald-50 text-emerald-600 p-1.5 rounded min-w-[35px] text-center">S:{d.successCount}</span>
-                      <span className="bg-rose-50 text-rose-600 p-1.5 rounded min-w-[35px] text-center">R:{d.rejectCount}</span>
+                    <div className="flex gap-1 justify-center text-[13px] font-black">
+                      <span className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded min-w-[40px] text-center" title="Given">G:{d.totalTasks}</span>
+                      <span className="bg-blue-50 text-blue-600 p-1.5 rounded min-w-[40px] text-center" title="Complete">C:{d.completeTasks}</span>
+                      <span className={`p-1.5 rounded min-w-[40px] text-center ${d.pendingTasks > 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`} title="Pending">P:{d.pendingTasks}</span>
+                      <span className="bg-emerald-50 text-emerald-600 p-1.5 rounded min-w-[40px] text-center" title="Success">S:{d.successCount}</span>
+                      <span className="bg-rose-50 text-rose-600 p-1.5 rounded min-w-[40px] text-center" title="Reject">R:{d.rejectCount}</span>
                     </div>
                   </td>
                   <td className="p-6 text-right">
                     <div className="flex justify-end gap-3 items-center">
                       <button 
                         onClick={() => viewImage(d.driveLink || d.imageLink)} 
-                        title="View Design"
-                        className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 text-indigo-600 rounded-xl transition-all shadow-sm"
+                        className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all"
                       >
                         👁️
                       </button>
 
-                      <button onClick={() => setEditData(d)} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[11px] uppercase font-black hover:bg-indigo-700 transition shadow-md">
+                      <button onClick={() => setEditData(d)} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[11px] uppercase font-black">
                         Edit
                       </button>
                       
                       {role === "admin" && (
-                        <button onClick={() => remove(d._id)} className="bg-rose-500 text-white px-4 py-2 rounded-xl text-[11px] uppercase font-black hover:bg-rose-600 transition shadow-md">
+                        <button onClick={() => remove(d._id)} className="bg-rose-500 text-white px-4 py-2 rounded-xl text-[11px] uppercase font-black">
                           Delete
                         </button>
                       )}
@@ -158,7 +150,17 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
         )}
       </div>
 
-      {editData && <AddDesignModal editData={editData} onClose={() => setEditData(null)} refresh={refresh} user={user} />}
+      {/* এডিট করার সময় সব ডাটা এবং designs অ্যারে পাস করা হচ্ছে */}
+      {editData && (
+        <AddDesignModal 
+          editData={editData} 
+          onClose={() => setEditData(null)} 
+          refresh={refresh} 
+          user={user} 
+          selectedDate={editData.submittedDate || selectedDate}
+          designs={designs} 
+        />
+      )}
     </div>
   );
 }

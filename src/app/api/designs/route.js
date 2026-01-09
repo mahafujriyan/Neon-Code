@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb"; // পাথ ফিক্স করা হয়েছে
+import { connectDB } from "@/lib/mongodb";
 import Design from "@/models/Design";
 
 // ১. ডাটা রিট্রিভ করা (GET)
@@ -9,13 +9,11 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const clientId = searchParams.get("clientId");
 
-    // যদি clientId থাকে, তবে ওই নির্দিষ্ট ক্লায়েন্টের ডাটা খুঁজবে
     if (clientId) {
       const existingClient = await Design.findOne({ clientId: clientId }).sort({ createdAt: -1 });
       return NextResponse.json(existingClient || null);
     }
 
-    // অন্যথায় সব ডাটা সিরিয়ালি রিটার্ন করবে
     const designs = await Design.find({}).sort({ createdAt: -1 });
     return NextResponse.json(designs);
   } catch (error) {
@@ -29,7 +27,6 @@ export async function POST(req) {
     await connectDB();
     const body = await req.json();
     
-    // ব্যাকএন্ডে পুনরায় ক্যালকুলেশন নিশ্চিত করা
     const total = Number(body.totalTasks) || 0;
     const complete = Number(body.completeTasks) || 0;
     const success = Number(body.successCount) || 0;
@@ -41,7 +38,7 @@ export async function POST(req) {
       pendingTasks: total - complete, 
       successCount: success,
       rejectCount: complete - success, 
-      status: "pending", 
+      status: body.status || "pending", 
     };
 
     const newDesign = await Design.create(cleanData);
@@ -59,13 +56,21 @@ export async function PUT(req) {
   try {
     await connectDB();
     const body = await req.json();
-    const { id, ...updateData } = body;
+    
+    // ফ্রন্টএন্ড থেকে _id বা id যেকোনো একটা আসতে পারে, সেটা রিসিভ করা
+    const targetId = body._id || body.id;
 
-    if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    if (!targetId) {
+      return NextResponse.json({ error: "ID (_id or id) is required for update" }, { status: 400 });
+    }
 
-    const total = Number(updateData.totalTasks) || 0;
-    const complete = Number(updateData.completeTasks) || 0;
-    const success = Number(updateData.successCount) || 0;
+    // ক্যালকুলেশন ফিল্ডগুলো আলাদা করা
+    const total = Number(body.totalTasks) || 0;
+    const complete = Number(body.completeTasks) || 0;
+    const success = Number(body.successCount) || 0;
+
+    // বডি থেকে অপ্রয়োজনীয় আইডি ফিল্ড বাদ দিয়ে বাকি ডাটা নেয়া
+    const { _id, id, ...updateData } = body;
 
     const finalUpdate = {
       ...updateData,
@@ -77,13 +82,18 @@ export async function PUT(req) {
     };
 
     const updatedDesign = await Design.findByIdAndUpdate(
-      id,
+      targetId,
       { $set: finalUpdate }, 
-      { new: true }
+      { new: true, runValidators: true }
     );
+
+    if (!updatedDesign) {
+      return NextResponse.json({ error: "No record found with this ID" }, { status: 404 });
+    }
 
     return NextResponse.json(updatedDesign);
   } catch (error) {
+    console.error("Update Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
