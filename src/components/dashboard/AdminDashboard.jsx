@@ -146,14 +146,15 @@ const monthlyOrders = orders.filter(o => {
                 Filtering: <span className="text-indigo-500">{filterManager}</span>
               </p>
             </div>
-            <button 
+          
+          </div>
+          <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3 w-full lg:w-auto">
+              <button 
         onClick={() => router.push("/design")} 
         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-[11px] font-bold uppercase shadow-lg active:scale-95 transition-all"
       >
-        🎨 Design Panel
-      </button>
-          </div>
-          <div className="flex flex-wrap items-center justify-center lg:justify-end gap-3 w-full lg:w-auto">
+        🎨 Design 
+           </button>
             {/* --- ম্যানেজার ফিল্টার ড্রপডাউন যোগ করা হয়েছে --- */}
             <select 
               value={filterManager}
