@@ -16,8 +16,8 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
     managerEmail: user?.email || "",
     clientId: generateDateId(selectedDate), 
     description: "", 
-    driveLink: "",
-    imageUrl: "", 
+    driveLink: "",    // ইমেজ লিঙ্কের জন্য
+    folderLink: "",   // ফোল্ডার লিঙ্কের জন্য (আগে imageUrl ছিল)
     totalTasks: 10, 
     completeTasks: 0,
     successCount: 0,
@@ -25,16 +25,19 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
     rejectCount: 0,
   });
 
-  const managerList = ["Abdullah GFX", "Redowan", "Arko"];
-  const isAdmin = user?.role === "admin";
+  // Edit করার সময় ডাটা লোড করা
+ useEffect(() => {
+  if (editData) {
+    setForm({
+      ...editData,
+      folderLink: editData.folderLink || editData.imageUrl || "", 
+      driveLink: editData.driveLink || "",
+    });
+    setIsExistingClient(true);
+  }
+}, [editData]);
 
-  useEffect(() => {
-    if (editData) {
-      setForm({ ...editData });
-      setIsExistingClient(true);
-    }
-  }, [editData]);
-
+  // Client ID টাইপ করলে অটো ডাটা খুঁজে বের করা
   useEffect(() => {
     if (editData) return;
     const timeoutId = setTimeout(() => {
@@ -46,6 +49,7 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
             ...prev, 
             ...match, 
             _id: match._id,
+            folderLink: match.folderLink || match.imageUrl || "", // এখানেও চেক করবে
             managerName: prev.managerName 
           }));
         } else {
@@ -56,26 +60,20 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
     return () => clearTimeout(timeoutId);
   }, [form.clientId, designs, editData]);
 
+  // Quota ও অন্যান্য ক্যালকুলেশন আগের মতোই থাকবে...
   useEffect(() => {
     const todaysOtherComplete = designs
-      .filter(d => 
-        d.managerName === form.managerName && 
-        d.submittedDate === selectedDate && 
-        d.clientId !== form.clientId
-      )
+      .filter(d => d.managerName === form.managerName && d.submittedDate === selectedDate && d.clientId !== form.clientId)
       .reduce((acc, curr) => acc + (Number(curr.completeTasks) || 0), 0);
-
     const previousPending = designs
       .filter(d => d.managerName === form.managerName && d.submittedDate !== selectedDate)
       .reduce((acc, curr) => acc + (Number(curr.pendingTasks) || 0), 0);
-
     setManagerQuotaBase(previousPending + (10 - todaysOtherComplete));
   }, [form.managerName, designs, form.clientId, selectedDate]);
 
   useEffect(() => {
     const complete = Number(form.completeTasks) || 0;
     const success = Number(form.successCount) || 0;
-
     setForm((prev) => ({
       ...prev,
       pendingTasks: managerQuotaBase - complete,
@@ -93,7 +91,6 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, submittedDate: selectedDate, id: form._id }),
       });
-
       if (res.ok) {
         refresh();
         onClose();
@@ -109,10 +106,11 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
     <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 text-slate-900 dark:text-white">
       <div className="bg-white dark:bg-[#0f172a] w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto scroller-hidden">
         
+        {/* Header... */}
         <div className="flex justify-between items-center mb-6 border-b dark:border-slate-800 pb-4">
-          <div>
+           <div>
             <h2 className={`text-xl font-black uppercase leading-none ${isExistingClient ? 'text-amber-500' : 'text-indigo-600'}`}>
-              {isExistingClient ? "ID Found" : "New Entry"}
+              {isExistingClient ? "ID Found (Edit)" : "New Entry"}
             </h2>
             <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-widest">{selectedDate}</p>
           </div>
@@ -125,87 +123,76 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
         </div>
 
         <div className="space-y-4">
+          {/* Client ID & Manager... */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-black uppercase text-indigo-500 ml-1">Client ID</label>
-              <input
-                type="text"
-                value={form.clientId}
-                onChange={(e) => setForm({...form, clientId: e.target.value})}
-                className="w-full p-3 mt-1 rounded-xl font-bold text-xs bg-white dark:bg-slate-900 border dark:border-slate-700 outline-none focus:ring-1 ring-indigo-500"
-              />
+              <input type="text" value={form.clientId} onChange={(e) => setForm({...form, clientId: e.target.value})} className="w-full p-3 mt-1 rounded-xl font-bold text-xs bg-white dark:bg-slate-900 border dark:border-slate-700 outline-none focus:ring-1 ring-indigo-500" />
             </div>
             <div>
               <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Manager</label>
-              <select
-                value={form.managerName}
-                onChange={(e) => setForm({ ...form, managerName: e.target.value })}
-                className="w-full p-3 mt-1 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl font-bold text-xs outline-none"
-              >
-                {managerList.map((m) => <option key={m} value={m}>{m}</option>)}
+              <select value={form.managerName} onChange={(e) => setForm({ ...form, managerName: e.target.value })} className="w-full p-3 mt-1 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl font-bold text-xs outline-none" >
+                {["Abdullah GFX", "Redowan", "Arko"].map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
           </div>
 
+          {/* Description... */}
           <div>
             <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Description</label>
-            <textarea
-              rows="3"
-              placeholder="Enter task details or notes..."
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full p-3 mt-1 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-1 ring-indigo-500 transition-all resize-none"
-            />
+            <textarea rows="2" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full p-3 mt-1 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-1 ring-indigo-500 transition-all resize-none" />
           </div>
 
-          <div>
-            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Image Link (Direct)</label>
+          {/* Folder Link Input (এটি আগে imageUrl ছিল) */}
+          {/* <div>
+            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Folder Drive Link</label>
             <input
               type="text"
-              placeholder="Paste Image URL from Drive/Hosting"
-              value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              placeholder="Paste folder link here"
+              value={form.folderLink}
+              onChange={(e) => setForm({ ...form, folderLink: e.target.value })}
               className="w-full p-3 mt-1 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-1 ring-indigo-500"
             />
-          </div>
-
+          </div> */}
           <div>
-            {/* ড্রাইভ লিঙ্ক ইনপুটে কমা ব্যবহারের নির্দেশ */}
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Folder Link</label>
+                        <input
+                          type="text"
+                          placeholder="Paste any folder link here"
+                          value={form.folderLink} 
+                          onChange={(e) => setForm({ ...form, folderLink: e.target.value })}
+                          className="w-full p-3 mt-1 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-1 ring-indigo-500"
+                        />
+                      </div>
+
+          {/* Image Links Input */}
+          <div>
             <label className="flex justify-between items-center ml-1">
-              <span className="text-[10px] font-black uppercase text-slate-400">Drive Links</span>
-              <span className="text-[9px] text-indigo-400 font-bold italic lowercase">use comma (,) for multiple links</span>
+              <span className="text-[10px] font-black uppercase text-slate-400">Image Drive Links</span>
+              <span className="text-[9px] text-indigo-400 font-bold italic lowercase">use comma (,) for multiple</span>
             </label>
             <input
               type="text"
-              placeholder="link1, link2, link3"
+              placeholder="link1, link2"
               value={form.driveLink}
               onChange={(e) => setForm({ ...form, driveLink: e.target.value })}
               className="w-full p-3 mt-1 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-1 ring-indigo-500"
             />
           </div>
 
+          {/* Quota, Done, Success fields... (বাকি অংশ আগের মতোই) */}
           <div className="grid grid-cols-3 gap-3">
-            <div className={`p-3 rounded-2xl text-center border bg-slate-50 dark:bg-slate-800/50`}>
+            <div className="p-3 rounded-2xl text-center border bg-slate-50 dark:bg-slate-800/50">
               <label className="text-[10px] font-black uppercase text-slate-500 block mb-1">Quota</label>
               <p className="font-black text-lg text-indigo-600">10</p>
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-2xl text-center border border-blue-100">
               <label className="text-[10px] font-black uppercase text-blue-500 block mb-1">Done</label>
-              <input 
-                type="number" 
-                value={form.completeTasks} 
-                onChange={(e) => setForm({ ...form, completeTasks: e.target.value })} 
-                className="w-full bg-transparent text-center font-black text-base text-blue-600 outline-none" 
-              />
+              <input type="number" value={form.completeTasks} onChange={(e) => setForm({ ...form, completeTasks: e.target.value })} className="w-full bg-transparent text-center font-black text-base text-blue-600 outline-none" />
             </div>
             <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl text-center border border-emerald-100">
               <label className="text-[10px] font-black uppercase text-emerald-500 block mb-1">Success</label>
-              <input 
-                type="number" 
-                value={form.successCount} 
-                onChange={(e) => setForm({ ...form, successCount: e.target.value })} 
-                className="w-full bg-transparent text-center font-black text-base text-emerald-600 outline-none" 
-              />
+              <input type="number" value={form.successCount} onChange={(e) => setForm({ ...form, successCount: e.target.value })} className="w-full bg-transparent text-center font-black text-base text-emerald-600 outline-none" />
             </div>
           </div>
 

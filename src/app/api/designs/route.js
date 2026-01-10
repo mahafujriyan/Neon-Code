@@ -33,6 +33,7 @@ export async function POST(req) {
 
     const cleanData = {
       ...body,
+      folderLink: body.folderLink || body.imageUrl || "",
       totalTasks: total,
       completeTasks: complete,
       pendingTasks: total - complete, 
@@ -73,6 +74,7 @@ export async function PUT(req) {
     const { _id, id, ...updateData } = body;
 
     const finalUpdate = {
+      folderLink: body.folderLink || body.imageUrl || "",
       ...updateData,
       totalTasks: total,
       completeTasks: complete,

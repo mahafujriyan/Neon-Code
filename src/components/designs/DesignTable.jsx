@@ -35,9 +35,9 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
     );
   }
 
-  const viewImage = (link) => {
-    if (link) window.open(link.trim(), "_blank");
-    else alert("No image link found!");
+  const openLink = (link) => {
+    if (link && link.trim()) window.open(link.trim(), "_blank");
+    else alert("No link found!");
   };
 
   const remove = async (id) => {
@@ -94,6 +94,7 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
                 <th className="p-6">Date & Time</th>
                 <th className="p-6">Manager Details</th>
                 <th className="p-6">Client ID</th>
+                <th className="p-6">Folder & Images</th>
                 <th className="p-6 text-center">Tasks (G/C/P/S/R)</th>
                 <th className="p-6 text-right">Action</th>
               </tr>
@@ -107,7 +108,6 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
                   </td>
                   <td className="p-6">
                     <div className="text-indigo-600 uppercase text-[14px] leading-none">{d.managerName}</div>
-                    {/* ম্যানেজার ইমেইল এখানে দেখানো হচ্ছে */}
                     <div className="text-[10px] text-slate-400 mt-1 lowercase font-medium">{d.managerEmail || "no-email@found.com"}</div>
                   </td>
                   <td className="p-6">
@@ -116,6 +116,40 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
                     </span>
                   </td>
                   <td className="p-6">
+                      <div className="flex items-center gap-4">
+                        {/* Folder Section */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[9px] uppercase text-slate-400">Folder</span>
+                          <button 
+                            onClick={() => openLink(d.folderLink || d.imageUrl)} 
+                            className={`p-2 rounded-lg transition-all ${(d.folderLink || d.imageUrl) ? 'bg-amber-100 text-amber-600 hover:bg-amber-600 hover:text-white' : 'bg-slate-100 text-slate-300 '}`}
+                            title="Open Link"
+                          >
+                            📂
+                          </button>
+                        </div>
+                        
+                             {/* Images Section */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[9px] uppercase text-slate-400">Images</span>
+                          <div className="flex gap-1">
+                            {d.driveLink ? d.driveLink.split(',').map((link, idx) => (
+                              <button 
+                                key={idx}
+                                onClick={() => openLink(link)} 
+                                className="p-2 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg transition-all text-sm border border-indigo-100 dark:border-indigo-800"
+                                title={`View Image ${idx + 1}`}
+                              >
+                                👁️
+                              </button>
+                            )) : (
+                              <span className="text-[10px] text-slate-300">None</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                                      <td className="p-6">
                     <div className="flex gap-1 justify-center text-[13px] font-black">
                       <span className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded min-w-[40px] text-center" title="Given">G:{d.totalTasks}</span>
                       <span className="bg-blue-50 text-blue-600 p-1.5 rounded min-w-[40px] text-center" title="Complete">C:{d.completeTasks}</span>
@@ -126,28 +160,9 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
                   </td>
                   <td className="p-6 text-right">
                     <div className="flex justify-end gap-2 items-center">
-                      {/* মাল্টিপল ড্রাইভ লিঙ্ক হ্যান্ডলিং */}
-                      <div className="flex gap-1 mr-2">
-                        {d.driveLink ? d.driveLink.split(',').map((link, idx) => (
-                          <button 
-                            key={idx}
-                            onClick={() => viewImage(link)} 
-                            className="w-8 h-8 flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg transition-all text-[10px] font-black border border-indigo-100 dark:border-indigo-800"
-                            title={`Open Link ${idx + 1}`}
-                          >
-                            L{idx + 1}
-                          </button>
-                        )) : (
-                          <button onClick={() => viewImage(d.imageUrl)} className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all">
-                            👁️
-                          </button>
-                        )}
-                      </div>
-
                       <button onClick={() => setEditData(d)} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[11px] uppercase font-black">
                         Edit
                       </button>
-                      
                       {role === "admin" && (
                         <button onClick={() => remove(d._id)} className="bg-rose-500 text-white px-4 py-2 rounded-xl text-[11px] uppercase font-black">
                           Delete
