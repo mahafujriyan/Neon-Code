@@ -17,7 +17,7 @@ export default function DesignDashboard() {
   const [filterManager, setFilterManager] = useState("All");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const managerList = ["Abdullah GFX", "Redown", "Arko"];
+  const managerList = ["Abdullah GFX", "Redowan", "Arko"];
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fUser) => {

@@ -20,7 +20,6 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
 
   const currentMonthStr = selectedDate.substring(0, 7);
 
-  // ফিল্টারিং লজিক
   let filteredData = designs.filter((d) => {
     const itemDate = d.submittedDate || getLocalDate(d.createdAt);
     if (filterMode === "daily") {
@@ -37,7 +36,7 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
   }
 
   const viewImage = (link) => {
-    if (link) window.open(link, "_blank");
+    if (link) window.open(link.trim(), "_blank");
     else alert("No image link found!");
   };
 
@@ -107,7 +106,9 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
                     <div className="text-[10px] text-slate-400">{getTime(d.createdAt)}</div>
                   </td>
                   <td className="p-6">
-                    <div className="text-indigo-600 uppercase text-[14px]">{d.managerName}</div>
+                    <div className="text-indigo-600 uppercase text-[14px] leading-none">{d.managerName}</div>
+                    {/* ম্যানেজার ইমেইল এখানে দেখানো হচ্ছে */}
+                    <div className="text-[10px] text-slate-400 mt-1 lowercase font-medium">{d.managerEmail || "no-email@found.com"}</div>
                   </td>
                   <td className="p-6">
                     <span className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg text-[11px] dark:text-slate-300">
@@ -124,13 +125,24 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
                     </div>
                   </td>
                   <td className="p-6 text-right">
-                    <div className="flex justify-end gap-3 items-center">
-                      <button 
-                        onClick={() => viewImage(d.driveLink || d.imageLink)} 
-                        className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all"
-                      >
-                        👁️
-                      </button>
+                    <div className="flex justify-end gap-2 items-center">
+                      {/* মাল্টিপল ড্রাইভ লিঙ্ক হ্যান্ডলিং */}
+                      <div className="flex gap-1 mr-2">
+                        {d.driveLink ? d.driveLink.split(',').map((link, idx) => (
+                          <button 
+                            key={idx}
+                            onClick={() => viewImage(link)} 
+                            className="w-8 h-8 flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg transition-all text-[10px] font-black border border-indigo-100 dark:border-indigo-800"
+                            title={`Open Link ${idx + 1}`}
+                          >
+                            L{idx + 1}
+                          </button>
+                        )) : (
+                          <button onClick={() => viewImage(d.imageUrl)} className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all">
+                            👁️
+                          </button>
+                        )}
+                      </div>
 
                       <button onClick={() => setEditData(d)} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[11px] uppercase font-black">
                         Edit
@@ -150,7 +162,6 @@ export default function DesignTable({ designs = [], role, refresh, user, selecte
         )}
       </div>
 
-      {/* এডিট করার সময় সব ডাটা এবং designs অ্যারে পাস করা হচ্ছে */}
       {editData && (
         <AddDesignModal 
           editData={editData} 

@@ -15,7 +15,7 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
     managerName: user?.name || "Abdullah GFX",
     managerEmail: user?.email || "",
     clientId: generateDateId(selectedDate), 
-    description: "", // ডেসক্রিপশন ফিল্ড
+    description: "", 
     driveLink: "",
     imageUrl: "", 
     totalTasks: 10, 
@@ -25,7 +25,7 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
     rejectCount: 0,
   });
 
-  const managerList = ["Abdullah GFX", "Redown", "Arko"];
+  const managerList = ["Abdullah GFX", "Redowan", "Arko"];
   const isAdmin = user?.role === "admin";
 
   useEffect(() => {
@@ -109,7 +109,6 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
     <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 text-slate-900 dark:text-white">
       <div className="bg-white dark:bg-[#0f172a] w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto scroller-hidden">
         
-        {/* Header */}
         <div className="flex justify-between items-center mb-6 border-b dark:border-slate-800 pb-4">
           <div>
             <h2 className={`text-xl font-black uppercase leading-none ${isExistingClient ? 'text-amber-500' : 'text-indigo-600'}`}>
@@ -148,7 +147,6 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
             </div>
           </div>
 
-          {/* ডেসক্রিপশন ফিল্ড (নতুন যোগ করা হয়েছে) */}
           <div>
             <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Description</label>
             <textarea
@@ -172,9 +170,14 @@ export default function AddDesignModal({ onClose, refresh, user, editData = null
           </div>
 
           <div>
-            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Drive Link (Full)</label>
+            {/* ড্রাইভ লিঙ্ক ইনপুটে কমা ব্যবহারের নির্দেশ */}
+            <label className="flex justify-between items-center ml-1">
+              <span className="text-[10px] font-black uppercase text-slate-400">Drive Links</span>
+              <span className="text-[9px] text-indigo-400 font-bold italic lowercase">use comma (,) for multiple links</span>
+            </label>
             <input
               type="text"
+              placeholder="link1, link2, link3"
               value={form.driveLink}
               onChange={(e) => setForm({ ...form, driveLink: e.target.value })}
               className="w-full p-3 mt-1 bg-white dark:bg-slate-900 border dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:ring-1 ring-indigo-500"
